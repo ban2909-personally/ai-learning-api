@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: ai-learning-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/ai_learning}
+    username: ${DB_USERNAME:ai_learning}
+    password: ${DB_PASSWORD:local_password}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:Zm9yLWxvY2FsLWRldmVsb3BtZW50LW9ubHktcmVwbGFjZS10aGlzLXNlY3JldC1iZWZvcmUtcHJvZHVjdGlvbg==}
+    issuer: ${JWT_ISSUER:ai-learning-api}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:PT15M}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:P14D}
+    refresh-cookie-secure: ${REFRESH_COOKIE_SECURE:false}
+    bcrypt-strength: ${BCRYPT_STRENGTH:12}
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}

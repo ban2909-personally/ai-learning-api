@@ -1,0 +1,26 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.log
+.m2/
+.mvn/timing.properties
+
+# Node
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local infrastructure data
+.data/

@@ -38,6 +38,13 @@ owner's request; a production-code compile/package check remains mandatory befor
 - Process correction: all remaining slices must pass the complete existing test suite and production
   build before push/merge; skipping new test development no longer means skipping regression execution.
 
+## Test hardening — learning content and progress
+
+- Branch: `test/learning-content-progress`
+- Added unit coverage for preview access, locked lesson authorization, default resume state, duration
+  validation, and timestamped completion persistence.
+- Verification gate: complete Maven verify locally, followed by GitHub Actions before accepting `main`.
+
 ## Slice 2 — Authenticated lesson access
 
 - Branch: `feature/lesson-access`

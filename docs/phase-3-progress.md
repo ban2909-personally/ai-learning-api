@@ -1,9 +1,8 @@
-# Phase 3 — Learning Experience (progress)
+# Phase 3 — Learning Experience (completed)
 
 ## Trạng thái
 
-Vertical slice 1 `Enrollment -> My Learning` đã hoàn tất code và kiểm thử trên branch
-`feature/learning-experience`. Chưa commit/push; chờ chủ dự án duyệt.
+Phase 3 đã hoàn tất các vertical slice Enrollment, Curriculum, Lesson Player và Progress/Resume.
 
 ## Phạm vi đã triển khai
 
@@ -15,12 +14,14 @@ Vertical slice 1 `Enrollment -> My Learning` đã hoàn tất code và kiểm th
 - `DirectEnrollmentPolicy`: khóa miễn phí được ghi danh; khóa trả phí trả `payment_required`
   cho tới khi Commerce xử lý thanh toán.
 
-## Kiểm thử
+## Kiểm thử và quality gate
 
 - `DirectEnrollmentPolicyTest`: 2 unit tests.
 - `EnrollmentApiIntegrationTest`: 3 integration tests với PostgreSQL Testcontainers.
-- Full backend regression: 16 tests, 0 failure, 0 error, 0 skipped.
-- Flyway V1-V3 và Hibernate `ddl-auto=validate`: PASS.
+- Full backend regression: 29 tests, 0 failure, 0 error, 0 skipped trên Docker-backed clean verify.
+- Flyway V1-V5 và Hibernate `ddl-auto=validate`: PASS.
+- Spring Modulith và ArchUnit boundary rules: PASS.
+- JaCoCo line coverage: 73,89%; Maven gate tối thiểu 70%.
 
 ## File chính
 
@@ -29,9 +30,10 @@ Vertical slice 1 `Enrollment -> My Learning` đã hoàn tất code và kiểm th
 - `src/test/java/com/ailearning/platform/learning/**`
 - `src/test/resources/learning-test-*.sql`
 
-## Việc còn lại của Phase 3
+## Definition of done
 
-- Curriculum: sections/lessons, preview và access control.
-- Lesson player và lưu/resume progress theo transaction.
-- Coverage report/gate và Selenium smoke cho luồng quan trọng.
-- Cập nhật báo cáo hoàn thành Phase 3 sau khi toàn bộ scope đạt DoD.
+- [x] Enrollment idempotent và My Learning theo JWT subject.
+- [x] Curriculum sections/lessons, preview và content access control.
+- [x] Lesson player, transactional progress, completion và resume.
+- [x] Flyway/Testcontainers, unit, security, Modulith và ArchUnit tests.
+- [x] JaCoCo report/gate và frontend responsive Selenium smoke.

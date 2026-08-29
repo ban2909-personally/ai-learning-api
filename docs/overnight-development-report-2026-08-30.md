@@ -26,6 +26,16 @@ owner's request; a production-code compile/package check remains mandatory befor
 
 ## Pending slices
 
-- Authenticated lesson access and enrollment authorization.
 - Transactional lesson progress and resume.
 - Frontend learning experience integration.
+
+## Slice 2 — Authenticated lesson access
+
+- Branch: `feature/lesson-access`
+- API: `GET /api/v1/me/courses/{courseSlug}/lessons/{lessonId}` returns player-ready lesson content.
+- Authorization: JWT identity is scoped to the request. Preview lessons are accessible to authenticated
+  users; locked lessons require an ACTIVE or COMPLETED enrollment and reject cancelled/missing
+  enrollments with 403.
+- Module boundary: Learning consumes Catalog only through the named `learning-content` interface;
+  Catalog persistence entities are not exposed.
+- Verification: production package compile with tests skipped.

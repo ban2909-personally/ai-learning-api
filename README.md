@@ -28,3 +28,11 @@ mvn verify
 ```
 
 Database schema changes must be delivered through Flyway migrations. Hibernate is configured with `ddl-auto=validate` and must not mutate the schema.
+
+## Architecture
+
+The backend is a Spring Modulith modular monolith with `identity`, `catalog`, and `learning` bounded
+contexts. Business modules use hexagonal ports and adapters; domain/application code is protected by
+ArchUnit and cross-module access is restricted to named Modulith interfaces. Technical configuration,
+security, and web error handling live under `platform`; `sharedkernel` contains only minimal,
+framework-free semantics. See `docs/architecture/ADR-001-modular-monolith-and-hexagonal-modules.md`.

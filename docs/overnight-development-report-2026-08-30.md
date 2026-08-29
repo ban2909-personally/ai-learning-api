@@ -26,7 +26,6 @@ owner's request; a production-code compile/package check remains mandatory befor
 
 ## Pending slices
 
-- Transactional lesson progress and resume.
 - Frontend learning experience integration.
 
 ## Slice 2 — Authenticated lesson access
@@ -38,4 +37,17 @@ owner's request; a production-code compile/package check remains mandatory befor
   enrollments with 403.
 - Module boundary: Learning consumes Catalog only through the named `learning-content` interface;
   Catalog persistence entities are not exposed.
+- Verification: production package compile with tests skipped.
+
+## Slice 3 — Transactional lesson progress and resume
+
+- Branch: `feature/lesson-progress`
+- Database: Flyway V5 adds one progress row per enrollment/lesson, non-negative position constraints,
+  cascade cleanup, and a recent-progress index.
+- API: authenticated GET/PUT progress endpoints support resume position and completion state.
+- Consistency: PostgreSQL upsert makes repeated saves idempotent; completion is monotonic and cannot be
+  accidentally reverted. The application rejects negative positions and positions beyond lesson duration.
+- Security: progress reads/writes derive ownership from the JWT user and require a non-cancelled enrollment.
+- Transactionality: the use case is wrapped by an inbound transaction adapter; application code remains
+  independent of Spring transaction APIs.
 - Verification: production package compile with tests skipped.

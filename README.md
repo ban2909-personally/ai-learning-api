@@ -27,6 +27,9 @@ The API listens on `http://localhost:8080`; health is available at `/actuator/he
 mvn verify
 ```
 
+The verify lifecycle also enforces the JaCoCo line-coverage baseline and writes the HTML report to
+`target/site/jacoco/index.html`.
+
 Database schema changes must be delivered through Flyway migrations. Hibernate is configured with `ddl-auto=validate` and must not mutate the schema.
 
 ## Architecture

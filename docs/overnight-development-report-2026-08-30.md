@@ -45,6 +45,15 @@ owner's request; a production-code compile/package check remains mandatory befor
   validation, and timestamped completion persistence.
 - Verification gate: complete Maven verify locally, followed by GitHub Actions before accepting `main`.
 
+## Phase 3 quality gate
+
+- Branch: `build/coverage-quality-gate`
+- JaCoCo is attached to the Maven test lifecycle, publishes HTML/XML/CSV reports during `verify`, and
+  blocks regression below the 70% whole-application line baseline. The first full Docker-backed run
+  measured 73.89% line coverage.
+- The baseline is intentionally incremental: generated/persistence/configuration code remains visible
+  in the denominator, and future phases should raise the threshold alongside business logic coverage.
+
 ## Slice 2 — Authenticated lesson access
 
 - Branch: `feature/lesson-access`

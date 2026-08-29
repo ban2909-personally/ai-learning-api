@@ -1,8 +1,10 @@
 package com.ailearning.platform.learning;
 
 import com.ailearning.platform.catalog.api.usecase.published.PublishedCourseLookup;
+import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningContentLookup;
 import com.ailearning.platform.identity.api.usecase.lookup.UserLookup;
 import com.ailearning.platform.learning.adapter.out.persistence.jpa.repository.EnrollmentJpaRepository;
+import com.ailearning.platform.learning.adapter.out.persistence.jpa.repository.LessonProgressJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,9 +21,11 @@ import java.time.Clock;
         + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration")
 class LearningModuleIntegrationTest {
     @MockitoBean PublishedCourseLookup courses;
+    @MockitoBean CourseLearningContentLookup learningContent;
     @MockitoBean UserLookup users;
     @MockitoBean Clock clock;
     @MockitoBean EnrollmentJpaRepository enrollments;
+    @MockitoBean LessonProgressJpaRepository lessonProgress;
     @MockitoBean PlatformTransactionManager transactionManager;
 
     @Test

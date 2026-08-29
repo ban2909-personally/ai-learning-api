@@ -16,6 +16,7 @@ public class LessonJpaEntity {
     @Column(nullable = false) private boolean preview;
     @Column(name = "display_order", nullable = false) private int displayOrder;
     protected LessonJpaEntity() {}
+    public CourseSectionJpaEntity getSection() { return section; }
     public UUID getId() { return id; }
     public String getTitle() { return title; }
     public String getContentUrl() { return contentUrl; }

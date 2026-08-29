@@ -28,6 +28,16 @@ owner's request; a production-code compile/package check remains mandatory befor
 
 - Frontend learning experience integration.
 
+## CI correction — module isolation dependencies
+
+- Branch: `fix/learning-module-test-boundaries`
+- Root cause: new Learning services consumed Catalog's `CourseLearningContentLookup` and introduced a
+  lesson-progress repository, but the isolated Spring Modulith test did not provide those boundary
+  doubles. Production compilation passed while the module ApplicationContext failed during `verify`.
+- Correction: mock both new boundaries in `LearningModuleIntegrationTest`.
+- Process correction: all remaining slices must pass the complete existing test suite and production
+  build before push/merge; skipping new test development no longer means skipping regression execution.
+
 ## Slice 2 — Authenticated lesson access
 
 - Branch: `feature/lesson-access`

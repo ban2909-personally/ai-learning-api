@@ -18,6 +18,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -25,6 +27,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import jakarta.servlet.http.Cookie;
+import java.util.Arrays;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.List;
@@ -34,7 +38,7 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, BearerTokenResolver bearerTokenResolver) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
@@ -49,8 +53,32 @@ public class SecurityConfig {
                                 "/api/v1/auth/logout").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer
+                        .bearerTokenResolver(bearerTokenResolver)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
+    }
+
+    @Bean
+    BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver headerResolver = new DefaultBearerTokenResolver();
+        return request -> {
+            String headerToken = headerResolver.resolve(request);
+            if (headerToken != null) {
+                return headerToken;
+            }
+            boolean mediaRead = (HttpMethod.GET.matches(request.getMethod())
+                    || HttpMethod.HEAD.matches(request.getMethod()))
+                    && request.getRequestURI().startsWith(request.getContextPath() + "/api/v1/media/");
+            if (!mediaRead || request.getCookies() == null) {
+                return null;
+            }
+            return Arrays.stream(request.getCookies())
+                    .filter(cookie -> "media_access".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .filter(value -> !value.isBlank())
+                    .findFirst()
+                    .orElse(null);
+        };
     }
 
     @Bean

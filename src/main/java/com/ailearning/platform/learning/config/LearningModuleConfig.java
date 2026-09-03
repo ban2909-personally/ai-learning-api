@@ -2,6 +2,7 @@ package com.ailearning.platform.learning.config;
 
 import com.ailearning.platform.catalog.api.usecase.published.PublishedCourseLookup;
 import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningContentLookup;
+import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningMediaLookup;
 import com.ailearning.platform.identity.api.usecase.lookup.UserLookup;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalEnrollmentUseCase;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalLessonProgressUseCase;
@@ -9,6 +10,7 @@ import com.ailearning.platform.learning.application.port.out.EnrollmentStore;
 import com.ailearning.platform.learning.application.port.out.LessonProgressStore;
 import com.ailearning.platform.learning.application.service.impl.EnrollmentService;
 import com.ailearning.platform.learning.application.service.impl.LessonAccessService;
+import com.ailearning.platform.learning.application.service.impl.LessonMediaAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonProgressService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +30,14 @@ public class LearningModuleConfig {
     @Bean
     LessonAccessService lessonAccessUseCase(CourseLearningContentLookup content, EnrollmentStore enrollments) {
         return new LessonAccessService(content, enrollments);
+    }
+
+    @Bean
+    LessonMediaAccessService lessonMediaAccessUseCase(
+            LessonAccessService lessonAccess,
+            CourseLearningMediaLookup media
+    ) {
+        return new LessonMediaAccessService(lessonAccess, media);
     }
     @Bean
     TransactionalEnrollmentUseCase enrollmentUseCase(PublishedCourseLookup courses, UserLookup users,

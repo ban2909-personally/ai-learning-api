@@ -12,6 +12,7 @@ import com.ailearning.platform.learning.application.service.impl.EnrollmentServi
 import com.ailearning.platform.learning.application.service.impl.LessonAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonMediaAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonProgressService;
+import com.ailearning.platform.learning.application.service.impl.MentoringLessonContextService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -30,6 +31,14 @@ public class LearningModuleConfig {
     @Bean
     LessonAccessService lessonAccessUseCase(CourseLearningContentLookup content, EnrollmentStore enrollments) {
         return new LessonAccessService(content, enrollments);
+    }
+
+    @Bean
+    MentoringLessonContextService mentoringLessonContextLookup(
+            CourseLearningContentLookup content,
+            EnrollmentStore enrollments
+    ) {
+        return new MentoringLessonContextService(content, enrollments);
     }
 
     @Bean

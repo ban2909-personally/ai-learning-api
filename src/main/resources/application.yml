@@ -60,6 +60,22 @@ app:
     allowed-content-types:
       - video/mp4
       - video/webm
+  ai:
+    mentor:
+      quota:
+        key-prefix: ${MENTOR_QUOTA_KEY_PREFIX:mentor:quota:v1}
+        requests: ${MENTOR_QUOTA_REQUESTS:20}
+        window: ${MENTOR_QUOTA_WINDOW:PT1H}
+      web:
+        stream-timeout: ${MENTOR_STREAM_TIMEOUT:PT2M}
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1/}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-5-mini}
+      max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:1500}
+      connect-timeout: ${OPENAI_CONNECT_TIMEOUT:PT5S}
+      read-timeout: ${OPENAI_READ_TIMEOUT:PT90S}
+      call-timeout: ${OPENAI_CALL_TIMEOUT:PT100S}
   storage:
     minio:
       endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

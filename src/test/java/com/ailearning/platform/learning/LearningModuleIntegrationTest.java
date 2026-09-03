@@ -2,6 +2,7 @@ package com.ailearning.platform.learning;
 
 import com.ailearning.platform.catalog.api.usecase.published.PublishedCourseLookup;
 import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningContentLookup;
+import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningMediaLookup;
 import com.ailearning.platform.identity.api.usecase.lookup.UserLookup;
 import com.ailearning.platform.learning.adapter.out.persistence.jpa.repository.EnrollmentJpaRepository;
 import com.ailearning.platform.learning.adapter.out.persistence.jpa.repository.LessonProgressJpaRepository;
@@ -22,6 +23,7 @@ import java.time.Clock;
 class LearningModuleIntegrationTest {
     @MockitoBean PublishedCourseLookup courses;
     @MockitoBean CourseLearningContentLookup learningContent;
+    @MockitoBean CourseLearningMediaLookup learningMedia;
     @MockitoBean UserLookup users;
     @MockitoBean Clock clock;
     @MockitoBean EnrollmentJpaRepository enrollments;

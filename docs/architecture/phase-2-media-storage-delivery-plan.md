@@ -58,7 +58,7 @@ CSRF targets.
 - [x] Existing 29 backend tests remain green and JaCoCo stays above the configured threshold.
 - [x] Frontend uses a native responsive video element with loading, error, and unsupported-media states.
 - [x] Vitest, TypeScript build, and Selenium checks pass at 320, 768, and 1440 pixels.
-- [ ] Feature branches are pushed and CI is green before merging to `main`.
+- [x] Feature branches are pushed and CI is green before merging to `main`.
 
 ## Deferred, explicitly separate work
 

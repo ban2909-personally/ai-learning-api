@@ -87,6 +87,14 @@ MinIO Java 9.0.3 is used behind the `LessonMediaStorage` port. Its OkHttp 5 tran
 the JVM implementation classes required at compile time, so `okhttp-jvm` 5.3.2 is declared explicitly. This is
 a compatibility dependency, not an additional application abstraction.
 
+## Branch verification
+
+- API feature HEAD `daa7dbf` passed GitHub Actions CI run
+  [33732946068](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33732946068).
+- Web feature HEAD `914f654` passed GitHub Actions CI run
+  [33732954601](https://github.com/ban2909-personally/ai-learning-web/actions/runs/33732954601).
+- The API documentation-only completion commit is also required to pass CI before merge.
+
 ## Next independent slice
 
 Implement popular-catalog Redis caching with cache-aside behavior, deterministic keys, bounded TTL, graceful

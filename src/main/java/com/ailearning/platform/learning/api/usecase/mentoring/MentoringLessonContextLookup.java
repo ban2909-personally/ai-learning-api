@@ -5,4 +5,3 @@ import java.util.UUID;
 public interface MentoringLessonContextLookup {
     MentoringLessonContext requireAccessible(UUID userId, String courseSlug, UUID lessonId);
 }
-

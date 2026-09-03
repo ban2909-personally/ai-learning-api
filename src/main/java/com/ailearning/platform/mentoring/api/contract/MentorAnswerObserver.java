@@ -7,4 +7,3 @@ public interface MentorAnswerObserver {
 
     void completed(MentorTurnView turn);
 }
-

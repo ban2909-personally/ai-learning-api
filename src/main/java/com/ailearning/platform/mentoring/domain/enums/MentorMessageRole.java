@@ -4,4 +4,3 @@ public enum MentorMessageRole {
     USER,
     ASSISTANT
 }
-

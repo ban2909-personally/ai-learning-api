@@ -48,4 +48,3 @@ Trade-offs:
 
 - OpenAI streaming responses: https://developers.openai.com/api/docs/guides/streaming-responses
 - OpenAI data controls: https://developers.openai.com/api/docs/guides/your-data
-

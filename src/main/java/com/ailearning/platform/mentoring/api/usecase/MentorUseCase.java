@@ -19,4 +19,3 @@ public interface MentorUseCase {
             MentorAnswerObserver observer
     );
 }
-

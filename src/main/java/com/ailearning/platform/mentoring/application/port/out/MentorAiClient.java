@@ -16,4 +16,3 @@ public interface MentorAiClient {
     record Result(String content, String model, int inputTokens, int outputTokens) {
     }
 }
-

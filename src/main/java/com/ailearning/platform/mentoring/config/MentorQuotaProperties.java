@@ -16,4 +16,3 @@ public record MentorQuotaProperties(
         @NotNull Duration window
 ) {
 }
-

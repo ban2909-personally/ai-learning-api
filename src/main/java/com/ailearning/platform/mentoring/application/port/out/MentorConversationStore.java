@@ -23,4 +23,3 @@ public interface MentorConversationStore {
 
     MentorMessage append(MentorMessage message);
 }
-

@@ -75,4 +75,3 @@ class MentoringLessonContextServiceTest {
                 .isEqualTo("mentor_access_denied");
     }
 }
-

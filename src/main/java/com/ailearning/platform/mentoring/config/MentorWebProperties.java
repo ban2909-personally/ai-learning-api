@@ -10,4 +10,3 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "app.ai.mentor.web")
 public record MentorWebProperties(@NotNull Duration streamTimeout) {
 }
-

@@ -63,4 +63,3 @@ class RedisMentorQuotaIntegrationTest {
                 .isBetween(1L, 30L);
     }
 }
-

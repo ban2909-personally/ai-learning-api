@@ -13,4 +13,3 @@ public interface MentorMessageJpaRepository extends JpaRepository<MentorMessageJ
             Pageable pageable
     );
 }
-

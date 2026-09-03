@@ -57,4 +57,3 @@ VALUES (
     'ACTIVE',
     CURRENT_TIMESTAMP
 );
-

@@ -31,4 +31,3 @@ public interface MentorConversationJpaRepository extends JpaRepository<MentorCon
             @Param("now") Instant now
     );
 }
-

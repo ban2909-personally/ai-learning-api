@@ -127,4 +127,3 @@ class MentorApiIntegrationTest {
         return new MentorMessageView(id, role, content, Instant.parse("2026-09-03T12:00:00Z"));
     }
 }
-

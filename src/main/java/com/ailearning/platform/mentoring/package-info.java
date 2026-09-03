@@ -3,4 +3,3 @@
         allowedDependencies = {"learning::mentoring-context", "sharedkernel::error"}
 )
 package com.ailearning.platform.mentoring;
-

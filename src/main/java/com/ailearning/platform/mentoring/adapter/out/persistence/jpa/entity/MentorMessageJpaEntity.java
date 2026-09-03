@@ -87,4 +87,3 @@ public class MentorMessageJpaEntity {
         return createdAt;
     }
 }
-

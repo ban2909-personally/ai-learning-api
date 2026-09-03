@@ -39,4 +39,3 @@ CREATE TABLE mentor_messages (
 
 CREATE INDEX idx_mentor_messages_conversation_history
     ON mentor_messages(conversation_id, created_at DESC, id DESC);
-

@@ -21,4 +21,3 @@ class MentorQuestionTest {
                 .isInstanceOf(BusinessException.class);
     }
 }
-

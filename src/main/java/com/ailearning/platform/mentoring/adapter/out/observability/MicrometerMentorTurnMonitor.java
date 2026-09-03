@@ -41,4 +41,3 @@ public class MicrometerMentorTurnMonitor implements MentorTurnMonitor {
                 .register(registry);
     }
 }
-

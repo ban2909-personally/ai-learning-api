@@ -10,4 +10,3 @@ public record AskMentorRequest(
         String question
 ) {
 }
-

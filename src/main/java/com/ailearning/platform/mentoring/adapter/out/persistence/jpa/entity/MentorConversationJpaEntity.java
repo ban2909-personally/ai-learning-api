@@ -51,4 +51,3 @@ public class MentorConversationJpaEntity {
         return updatedAt;
     }
 }
-

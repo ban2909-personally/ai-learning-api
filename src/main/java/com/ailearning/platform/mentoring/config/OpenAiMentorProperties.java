@@ -21,4 +21,3 @@ public record OpenAiMentorProperties(
         @NotNull Duration callTimeout
 ) {
 }
-

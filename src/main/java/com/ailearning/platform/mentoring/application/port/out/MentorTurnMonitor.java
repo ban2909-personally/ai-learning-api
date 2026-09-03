@@ -9,4 +9,3 @@ public interface MentorTurnMonitor {
 
     void failed(String reason);
 }
-

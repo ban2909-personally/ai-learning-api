@@ -16,4 +16,3 @@ public record MentorMessageResponse(
         return new MentorMessageResponse(view.id(), view.role(), view.content(), view.createdAt());
     }
 }
-

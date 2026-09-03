@@ -46,4 +46,3 @@ public class MentoringModuleConfig {
         return executor;
     }
 }
-

@@ -9,4 +9,3 @@ public record MentoringLessonContext(
         String lessonTitle
 ) {
 }
-

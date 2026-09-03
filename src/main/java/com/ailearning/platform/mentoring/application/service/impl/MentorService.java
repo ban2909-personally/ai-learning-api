@@ -136,4 +136,3 @@ public class MentorService implements MentorUseCase {
         return new MentorMessageView(message.id(), message.role(), message.content(), message.createdAt());
     }
 }
-

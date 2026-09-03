@@ -156,4 +156,3 @@ public class OpenAiResponsesMentorClient implements MentorAiClient {
         );
     }
 }
-

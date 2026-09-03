@@ -34,6 +34,10 @@ class CatalogApiIntegrationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.data.redis.host", () -> "localhost");
+        registry.add("spring.data.redis.port", () -> 1);
+        registry.add("spring.data.redis.connect-timeout", () -> "100ms");
+        registry.add("spring.data.redis.timeout", () -> "100ms");
     }
 
     @Autowired
@@ -49,6 +53,14 @@ class CatalogApiIntegrationTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].slug").value("spring-boot-api-thuc-chien"))
                 .andExpect(jsonPath("$.items[0].instructorName").value("Giảng viên Java"));
+    }
+
+    @Test
+    void returnsPopularCatalogWhenRedisIsUnavailable() throws Exception {
+        mockMvc.perform(get("/api/v1/courses").queryParam("size", "12"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].slug").value("spring-boot-api-thuc-chien"));
     }
 
     @Test

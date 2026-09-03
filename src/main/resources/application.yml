@@ -19,6 +19,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+  servlet:
+    multipart:
+      max-file-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
+      max-request-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -44,3 +48,14 @@ app:
     bcrypt-strength: ${BCRYPT_STRENGTH:12}
   cors:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
+  media:
+    max-upload-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
+    allowed-content-types:
+      - video/mp4
+      - video/webm
+  storage:
+    minio:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ACCESS_KEY:minioadmin}
+      secret-key: ${MINIO_SECRET_KEY:minioadmin_local_password}
+      bucket: ${MINIO_MEDIA_BUCKET:lesson-media}

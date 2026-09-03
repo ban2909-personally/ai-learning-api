@@ -53,6 +53,8 @@ class AuthFlowIntegrationTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(cookie().httpOnly("refresh_token", true))
+                .andExpect(cookie().httpOnly("media_access", true))
+                .andExpect(cookie().path("media_access", "/api/v1/media"))
                 .andExpect(jsonPath("$.user.roles[0]").value("STUDENT"))
                 .andReturn()
                 .getResponse()

@@ -9,6 +9,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -29,7 +30,23 @@ public class GlobalExceptionHandler {
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
             case CONFLICT -> HttpStatus.CONFLICT;
+            case PAYLOAD_TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE;
+            case SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+            case RANGE_NOT_SATISFIABLE -> HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE;
         };
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ProblemDetail handleUploadSizeExceeded(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "payload_too_large",
+                "Tệp tải lên vượt quá dung lượng cho phép.",
+                request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

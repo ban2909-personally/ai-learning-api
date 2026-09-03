@@ -26,6 +26,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private static final String REFRESH_COOKIE = "refresh_token";
+    private static final String MEDIA_ACCESS_COOKIE = "media_access";
     private final IdentityUseCase identity;
     private final SecurityProperties securityProperties;
 
@@ -53,7 +54,10 @@ public class AuthController {
     @PostMapping("/logout")
     ResponseEntity<Void> logout(@CookieValue(name = REFRESH_COOKIE, required = false) String token) {
         if (token != null && !token.isBlank()) identity.logout(token);
-        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, refreshCookie("", Duration.ZERO).toString()).build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie("", Duration.ZERO).toString())
+                .header(HttpHeaders.SET_COOKIE, mediaAccessCookie("", Duration.ZERO).toString())
+                .build();
     }
 
     @GetMapping("/me")
@@ -63,13 +67,24 @@ public class AuthController {
 
     private ResponseEntity<AuthResponse> withSession(AuthSession session, HttpStatus status) {
         AuthResponse body = new AuthResponse(session.accessToken(), "Bearer", session.expiresIn(), UserResponse.from(session.user()));
-        return ResponseEntity.status(status).header(HttpHeaders.SET_COOKIE,
-                refreshCookie(session.refreshToken(), session.refreshTokenTtl()).toString()).body(body);
+        return ResponseEntity.status(status)
+                .header(HttpHeaders.SET_COOKIE, refreshCookie(session.refreshToken(), session.refreshTokenTtl()).toString())
+                .header(HttpHeaders.SET_COOKIE, mediaAccessCookie(
+                        session.accessToken(),
+                        Duration.ofSeconds(session.expiresIn())
+                ).toString())
+                .body(body);
     }
 
     private ResponseCookie refreshCookie(String value, Duration maxAge) {
         return ResponseCookie.from(REFRESH_COOKIE, value).httpOnly(true)
                 .secure(securityProperties.refreshCookieSecure()).sameSite("Strict")
                 .path("/api/v1/auth").maxAge(maxAge).build();
+    }
+
+    private ResponseCookie mediaAccessCookie(String value, Duration maxAge) {
+        return ResponseCookie.from(MEDIA_ACCESS_COOKIE, value).httpOnly(true)
+                .secure(securityProperties.refreshCookieSecure()).sameSite("Strict")
+                .path("/api/v1/media").maxAge(maxAge).build();
     }
 }

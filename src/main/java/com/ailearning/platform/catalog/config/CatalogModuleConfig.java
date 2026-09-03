@@ -5,6 +5,7 @@ import com.ailearning.platform.catalog.application.port.out.CurriculumStore;
 import com.ailearning.platform.catalog.application.port.out.LessonContentStore;
 import com.ailearning.platform.catalog.application.port.out.LessonMediaCatalog;
 import com.ailearning.platform.catalog.application.port.out.LessonMediaStorage;
+import com.ailearning.platform.catalog.application.port.out.PopularCatalogCache;
 import com.ailearning.platform.catalog.application.service.impl.CatalogService;
 import com.ailearning.platform.catalog.application.service.impl.LessonMediaService;
 import com.ailearning.platform.catalog.application.service.impl.LessonMediaDeliveryService;
@@ -15,8 +16,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CatalogModuleConfig {
-    @Bean CatalogService catalogService(CatalogStore store, CurriculumStore curricula, LessonContentStore lessons) {
-        return new CatalogService(store, curricula, lessons);
+    @Bean
+    CatalogService catalogService(
+            CatalogStore store,
+            CurriculumStore curricula,
+            LessonContentStore lessons,
+            PopularCatalogCache popularCache
+    ) {
+        return new CatalogService(store, curricula, lessons, popularCache);
     }
 
     @Bean

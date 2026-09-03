@@ -48,16 +48,16 @@ History remains ordinary JSON so refresh/reconnect does not replay an upstream s
 
 - [x] Reconfirm clean API/web baselines and original roadmap.
 - [x] Record the module-boundary decision before implementation.
-- [ ] Add the learning-owned mentoring context contract and authorization tests.
-- [ ] Add conversation domain model, Flyway V7, JPA adapter, and repository integration tests.
-- [ ] Add Redis quota port/adapter with atomic-script integration tests.
-- [ ] Add OpenAI Responses streaming adapter with a local HTTP contract test.
-- [ ] Add application orchestration tests with mocked outbound ports.
-- [ ] Add authenticated MVC/SSE contract tests and module-isolation test.
-- [ ] Add responsive lesson mentor UI and component tests.
-- [ ] Run Maven `clean verify` with all Testcontainers.
-- [ ] Run frontend typecheck, unit tests, production build, and responsive browser smoke test.
-- [ ] Review diff for secrets, PII logging, module leaks, accidental API/schema changes, and generated artifacts.
+- [x] Add the learning-owned mentoring context contract and authorization tests.
+- [x] Add conversation domain model, Flyway V7, JPA adapter, and repository integration tests.
+- [x] Add Redis quota port/adapter with atomic-script integration tests.
+- [x] Add OpenAI Responses streaming adapter with a local HTTP contract test.
+- [x] Add application orchestration tests with mocked outbound ports.
+- [x] Add authenticated MVC/SSE contract tests and module-isolation test.
+- [x] Add responsive lesson mentor UI and component tests.
+- [x] Run Maven `clean verify` with all Testcontainers.
+- [x] Run frontend typecheck, unit tests, production build, and responsive browser smoke test.
+- [x] Review diff for secrets, PII logging, module leaks, accidental API/schema changes, and generated artifacts.
 - [ ] Commit by cohesive slice, push the feature branch, wait for green CI, merge to `main`, push, and verify main CI.
 
 ## Explicitly deferred
@@ -66,4 +66,3 @@ History remains ordinary JSON so refresh/reconnect does not replay an upstream s
 - Code execution or tool calling; the first slice is text-only and cannot execute learner code.
 - Shared conversations, instructor review, moderation dashboards, billing, and plan-based quotas.
 - Kafka analytics and WebSocket notifications, which belong to Phase 6.
-

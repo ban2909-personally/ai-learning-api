@@ -61,6 +61,12 @@ This slice deliberately does not claim distributed cache-stampede prevention. Ad
 soft-expiry/stale-while-refresh policy only when load measurements justify the coordination complexity. Catalog
 write/invalidation and deployment-level Redis memory/eviction policy also remain separate responsibilities.
 
+## Branch verification
+
+Feature HEAD `f553f9c` passed GitHub Actions CI run
+[33734809703](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33734809703). The documentation-only
+completion commit must also pass the same workflow before merge.
+
 ## References
 
 - [Redis cache-aside](https://redis.io/docs/latest/develop/use-cases/cache-aside/)

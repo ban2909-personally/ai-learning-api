@@ -55,7 +55,7 @@ must not be placed in controllers, JPA entities, or unrelated modules.
 - [x] A corrupt cached payload is discarded and treated as a miss.
 - [x] Catalog REST responses and PostgreSQL behavior remain unchanged when Redis is unavailable.
 - [x] Spring Modulith, ArchUnit, Flyway/JPA, JaCoCo, and all existing tests remain green.
-- [ ] The feature branch and final `main` merge both pass GitHub Actions before the slice is complete.
+- [x] The feature branch passes GitHub Actions before merge.
 
 ## References
 

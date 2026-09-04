@@ -13,7 +13,9 @@ class NotificationKafkaConsumerPropertiesTest {
                 true,
                 "lesson-completed",
                 "notifications",
-                Duration.ofSeconds(10)
+                Duration.ofSeconds(10),
+                3,
+                "lesson-completed.dlt"
         );
 
         assertThat(properties.hasSafeRetryDelay()).isTrue();
@@ -30,7 +32,9 @@ class NotificationKafkaConsumerPropertiesTest {
                 true,
                 "lesson-completed",
                 "notifications",
-                retryDelay
+                retryDelay,
+                3,
+                "lesson-completed.dlt"
         );
     }
 }

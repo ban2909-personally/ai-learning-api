@@ -1,4 +1,4 @@
-package com.ailearning.platform.notification.config;
+package com.ailearning.platform.analytics.config;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -10,8 +10,8 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 @Validated
-@ConfigurationProperties(prefix = "app.notifications.consumer")
-public record NotificationKafkaConsumerProperties(
+@ConfigurationProperties(prefix = "app.analytics.consumer")
+public record AnalyticsKafkaConsumerProperties(
         boolean enabled,
         @NotBlank String topic,
         @NotBlank String groupId,
@@ -19,7 +19,7 @@ public record NotificationKafkaConsumerProperties(
         @Min(1) int maxAttempts,
         @NotBlank String deadLetterTopic
 ) {
-    @AssertTrue(message = "notification Kafka retry delay must be at least one millisecond")
+    @AssertTrue(message = "analytics Kafka retry delay must be at least one millisecond")
     public boolean hasSafeRetryDelay() {
         if (retryDelay == null || retryDelay.isZero() || retryDelay.isNegative()) {
             return false;
@@ -31,7 +31,7 @@ public record NotificationKafkaConsumerProperties(
         }
     }
 
-    @AssertTrue(message = "notification dead-letter topic must differ from the source topic")
+    @AssertTrue(message = "analytics dead-letter topic must differ from the source topic")
     public boolean hasDistinctDeadLetterTopic() {
         return topic != null && deadLetterTopic != null && !topic.equals(deadLetterTopic);
     }

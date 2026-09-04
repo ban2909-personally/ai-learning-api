@@ -36,6 +36,7 @@ The JSON payload contains:
 - `eventType` (`lesson.completed`)
 - `schemaVersion` (`1`)
 - `occurredAt`
+- `progressId`
 - `userId`
 - `enrollmentId`
 - `courseId`
@@ -49,6 +50,7 @@ It deliberately contains no name, email address, access token, prompt, media URL
 - Enabling Kafka drains the backlog without changing application code.
 - Producer durability uses `acks=all` and idempotence.
 - Claim leases allow another instance to recover rows after a crashed dispatcher.
+- Configuration validation requires the claim lease to exceed the Kafka producer blocking budget plus the acknowledgement timeout for the whole claimed batch.
 - Pending-row lookup is backed by a partial index and each poll is batch-limited.
 - Topic creation is an explicit infrastructure concern; the application does not silently create production topics.
 - A growing pending count or repeated attempts is an operational alert condition.

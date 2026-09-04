@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,12 +41,15 @@ import static org.mockito.Mockito.verify;
         "app.notifications.consumer.enabled=true",
         "app.notifications.consumer.topic=" + KafkaNotificationConsumerIntegrationTest.TOPIC,
         "app.notifications.consumer.group-id=notification-consumer-integration",
-        "app.notifications.consumer.retry-delay=PT1S",
+        "app.notifications.consumer.retry-delay=PT0.001S",
+        "app.notifications.consumer.max-attempts=2",
+        "app.notifications.consumer.dead-letter-topic=" + KafkaNotificationConsumerIntegrationTest.DLT_TOPIC,
         "app.messaging.learning-events.enabled=false"
 })
 @Import(KafkaNotificationConsumerIntegrationTest.TopicConfiguration.class)
 class KafkaNotificationConsumerIntegrationTest {
     static final String TOPIC = "notification.lesson-completed.integration";
+    static final String DLT_TOPIC = TOPIC + ".dlt";
 
     @Container
     private static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka-native:3.9.1");
@@ -74,6 +80,9 @@ class KafkaNotificationConsumerIntegrationTest {
     @Autowired
     private MeterRegistry registry;
 
+    @Autowired
+    private ConsumerFactory<String, String> consumerFactory;
+
     @MockitoBean
     private NotificationRealtimeDelivery realtime;
 
@@ -95,6 +104,24 @@ class KafkaNotificationConsumerIntegrationTest {
             assertThat(counter("duplicate")).isEqualTo(1);
         });
         verify(realtime, times(1)).publish(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void publishesAPoisonRecordToTheConfiguredDeadLetterTopicAfterFiniteRetries() throws Exception {
+        try (Consumer<String, String> deadLetters = consumerFactory.createConsumer(
+                "notification-dlt-test-" + UUID.randomUUID(),
+                "notification-dlt-client"
+        )) {
+            deadLetters.subscribe(List.of(DLT_TOPIC));
+            kafka.send(TOPIC, UUID.randomUUID().toString(), "not-json").get(10, TimeUnit.SECONDS);
+
+            await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+                var records = deadLetters.poll(Duration.ofMillis(250));
+                assertThat(records).isNotEmpty();
+                assertThat(records.iterator().next().value()).isEqualTo("not-json");
+                assertThat(registry.counter("notifications.kafka.dead.letter").count()).isEqualTo(1);
+            });
+        }
     }
 
     private ProducerRecord<String, String> record(LessonCompletedEventV1 event) throws Exception {
@@ -138,6 +165,11 @@ class KafkaNotificationConsumerIntegrationTest {
         @Bean
         NewTopic notificationIntegrationTopic() {
             return new NewTopic(TOPIC, 1, (short) 1);
+        }
+
+        @Bean
+        NewTopic notificationDeadLetterIntegrationTopic() {
+            return new NewTopic(DLT_TOPIC, 1, (short) 1);
         }
     }
 }

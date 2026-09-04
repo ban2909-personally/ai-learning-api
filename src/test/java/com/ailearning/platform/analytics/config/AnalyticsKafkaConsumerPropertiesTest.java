@@ -14,7 +14,16 @@ class AnalyticsKafkaConsumerPropertiesTest {
         assertThat(properties(Duration.ofNanos(1)).hasSafeRetryDelay()).isFalse();
     }
 
+    @Test
+    void rejectsPublishingDeadLettersBackToTheSourceTopic() {
+        var properties = new AnalyticsKafkaConsumerProperties(
+                true, "topic", "group", Duration.ofSeconds(1), 3, "topic"
+        );
+
+        assertThat(properties.hasDistinctDeadLetterTopic()).isFalse();
+    }
+
     private AnalyticsKafkaConsumerProperties properties(Duration retryDelay) {
-        return new AnalyticsKafkaConsumerProperties(true, "topic", "group", retryDelay);
+        return new AnalyticsKafkaConsumerProperties(true, "topic", "group", retryDelay, 3, "topic.dlt");
     }
 }

@@ -19,7 +19,9 @@ class LessonCompletedAnalyticsRecordMapperTest {
     private final JsonMapper json = JsonMapper.builder().findAndAddModules().build();
     private final LessonCompletedAnalyticsRecordMapper mapper = new LessonCompletedAnalyticsRecordMapper(
             json,
-            new AnalyticsKafkaConsumerProperties(true, TOPIC, "analytics-test", Duration.ofSeconds(1))
+            new AnalyticsKafkaConsumerProperties(
+                    true, TOPIC, "analytics-test", Duration.ofSeconds(1), 3, TOPIC + ".dlt"
+            )
     );
 
     @Test

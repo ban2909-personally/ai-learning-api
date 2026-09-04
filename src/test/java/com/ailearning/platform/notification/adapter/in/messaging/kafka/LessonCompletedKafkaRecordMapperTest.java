@@ -19,7 +19,9 @@ class LessonCompletedKafkaRecordMapperTest {
     private final JsonMapper json = JsonMapper.builder().findAndAddModules().build();
     private final LessonCompletedKafkaRecordMapper mapper = new LessonCompletedKafkaRecordMapper(
             json,
-            new NotificationKafkaConsumerProperties(true, TOPIC, "notifications-test", Duration.ofSeconds(1))
+            new NotificationKafkaConsumerProperties(
+                    true, TOPIC, "notifications-test", Duration.ofSeconds(1), 3, TOPIC + ".dlt"
+            )
     );
 
     @Test

@@ -93,6 +93,8 @@ app:
       topic: ${LESSON_COMPLETED_TOPIC:ai-learning.learning.lesson-completed.v1}
       group-id: ${NOTIFICATION_KAFKA_GROUP_ID:ai-learning-notifications-v1}
       retry-delay: ${NOTIFICATION_KAFKA_RETRY_DELAY:PT10S}
+      max-attempts: ${NOTIFICATION_KAFKA_MAX_ATTEMPTS:3}
+      dead-letter-topic: ${NOTIFICATION_KAFKA_DLT:ai-learning.notifications.lesson-completed.dlt.v1}
     websocket:
       message-size: ${NOTIFICATION_WS_MESSAGE_SIZE:16KB}
       send-time-limit: ${NOTIFICATION_WS_SEND_TIME_LIMIT:PT10S}
@@ -105,6 +107,8 @@ app:
       topic: ${LESSON_COMPLETED_TOPIC:ai-learning.learning.lesson-completed.v1}
       group-id: ${ANALYTICS_KAFKA_GROUP_ID:ai-learning-analytics-v1}
       retry-delay: ${ANALYTICS_KAFKA_RETRY_DELAY:PT10S}
+      max-attempts: ${ANALYTICS_KAFKA_MAX_ATTEMPTS:3}
+      dead-letter-topic: ${ANALYTICS_KAFKA_DLT:ai-learning.analytics.lesson-completed.dlt.v1}
   ai:
     mentor:
       quota:

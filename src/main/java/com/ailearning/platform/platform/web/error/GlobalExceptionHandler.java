@@ -4,6 +4,7 @@ import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -64,6 +65,19 @@ public class GlobalExceptionHandler {
         );
         problem.setProperty("fieldErrors", fields);
         return problem;
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.BAD_REQUEST,
+                "validation_failed",
+                "Tham số yêu cầu không hợp lệ.",
+                request
+        );
     }
 
     private ProblemDetail problem(HttpStatus status, String code, String detail, HttpServletRequest request) {

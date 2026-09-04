@@ -82,6 +82,13 @@ app:
       producer-max-block-ms: ${LEARNING_EVENTS_KAFKA_MAX_BLOCK_MS:10000}
       retry-initial: ${LEARNING_EVENTS_RETRY_INITIAL:PT2S}
       retry-max: ${LEARNING_EVENTS_RETRY_MAX:PT5M}
+  notifications:
+    websocket:
+      message-size: ${NOTIFICATION_WS_MESSAGE_SIZE:16KB}
+      send-time-limit: ${NOTIFICATION_WS_SEND_TIME_LIMIT:PT10S}
+      send-buffer-size: ${NOTIFICATION_WS_SEND_BUFFER_SIZE:512KB}
+      first-message-timeout: ${NOTIFICATION_WS_FIRST_MESSAGE_TIMEOUT:PT30S}
+      heartbeat: ${NOTIFICATION_WS_HEARTBEAT:PT10S}
   ai:
     mentor:
       quota:

@@ -35,17 +35,17 @@ Phase 6 creates a reliable event backbone for learning analytics and user-specif
 - [x] Confirm Phase 5 feature/main CI success and close its report.
 - [x] Survey progress transactions, persistence, module rules, and existing infrastructure.
 - [x] Record the outbox and at-least-once delivery decision before implementation.
-- [ ] Add Kafka dependencies and bounded external configuration.
-- [ ] Add domain event, versioned API event, and outbound ports.
-- [ ] Refactor progress orchestration for readable first-completion detection and unit tests.
-- [ ] Add Flyway V8 outbox schema with uniqueness, lease, retry, and pending indexes.
-- [ ] Add PostgreSQL outbox adapter and Testcontainers integration tests.
-- [ ] Add bounded dispatcher, scheduled trigger, Kafka adapter, metrics, and unit tests.
-- [ ] Add Kafka Testcontainers contract test for key, headers, and JSON payload.
-- [ ] Run Maven `clean verify` with zero skipped tests and passing coverage/module/architecture gates.
-- [ ] Audit secrets, PII, logs, payload size, retry behavior, multi-instance claims, and diff formatting.
+- [x] Add Kafka dependencies and bounded external configuration.
+- [x] Add domain event, versioned API event, and outbound ports.
+- [x] Refactor progress orchestration for readable first-completion detection and unit tests.
+- [x] Add Flyway V8 outbox schema with uniqueness, lease, retry, and pending indexes.
+- [x] Add PostgreSQL outbox adapter and Testcontainers integration tests.
+- [x] Add bounded dispatcher, scheduled trigger, Kafka adapter, metrics, and unit tests.
+- [x] Add Kafka Testcontainers contract test for key, headers, and JSON payload.
+- [x] Run Maven `clean verify` with zero skipped tests and passing coverage/module/architecture gates.
+- [x] Audit secrets, PII, logs, payload size, retry behavior, multi-instance claims, and diff formatting.
 - [ ] Commit cohesive slices, push feature, wait for green CI, merge `main`, push, and verify main CI.
-- [ ] Publish the Phase 6.1 development report.
+- [x] Publish the Phase 6.1 development report.
 
 ## Compatibility constraints
 

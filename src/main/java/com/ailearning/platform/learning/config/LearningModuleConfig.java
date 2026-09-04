@@ -7,6 +7,7 @@ import com.ailearning.platform.identity.api.usecase.lookup.UserLookup;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalEnrollmentUseCase;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalLessonProgressUseCase;
 import com.ailearning.platform.learning.application.port.out.EnrollmentStore;
+import com.ailearning.platform.learning.application.port.out.LearningEventOutbox;
 import com.ailearning.platform.learning.application.port.out.LessonProgressStore;
 import com.ailearning.platform.learning.application.service.impl.EnrollmentService;
 import com.ailearning.platform.learning.application.service.impl.LessonAccessService;
@@ -17,19 +18,29 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
 import java.time.Clock;
 
 @Configuration
 public class LearningModuleConfig {
     @Bean
-    TransactionalLessonProgressUseCase lessonProgressUseCase(CourseLearningContentLookup content,
-            EnrollmentStore enrollments, LessonProgressStore progress, Clock clock,
-            PlatformTransactionManager transactionManager) {
-        var core = new LessonProgressService(content, enrollments, progress, clock);
+    TransactionalLessonProgressUseCase lessonProgressUseCase(
+            CourseLearningContentLookup content,
+            EnrollmentStore enrollments,
+            LessonProgressStore progress,
+            LearningEventOutbox events,
+            Clock clock,
+            PlatformTransactionManager transactionManager
+    ) {
+        var core = new LessonProgressService(content, enrollments, progress, events, clock);
         return new TransactionalLessonProgressUseCase(core, new TransactionTemplate(transactionManager));
     }
+
     @Bean
-    LessonAccessService lessonAccessUseCase(CourseLearningContentLookup content, EnrollmentStore enrollments) {
+    LessonAccessService lessonAccessUseCase(
+            CourseLearningContentLookup content,
+            EnrollmentStore enrollments
+    ) {
         return new LessonAccessService(content, enrollments);
     }
 
@@ -48,9 +59,15 @@ public class LearningModuleConfig {
     ) {
         return new LessonMediaAccessService(lessonAccess, media);
     }
+
     @Bean
-    TransactionalEnrollmentUseCase enrollmentUseCase(PublishedCourseLookup courses, UserLookup users,
-            EnrollmentStore enrollments, Clock clock, PlatformTransactionManager transactionManager) {
+    TransactionalEnrollmentUseCase enrollmentUseCase(
+            PublishedCourseLookup courses,
+            UserLookup users,
+            EnrollmentStore enrollments,
+            Clock clock,
+            PlatformTransactionManager transactionManager
+    ) {
         EnrollmentService core = new EnrollmentService(courses, users, enrollments, clock);
         return new TransactionalEnrollmentUseCase(core, new TransactionTemplate(transactionManager));
     }

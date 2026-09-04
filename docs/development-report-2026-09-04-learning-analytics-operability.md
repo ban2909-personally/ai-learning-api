@@ -4,7 +4,7 @@ Date: 2026-09-04
 
 Branch: `feature/learning-analytics-operability`
 
-Status: implementation and local capacity validation complete; final feature/main Git delivery remains open in the Phase 6 checklist.
+Status: implementation and all local quality gates complete; feature/main Git delivery remains open in the Phase 6 checklist.
 
 ## Outcome
 
@@ -60,12 +60,14 @@ Targeted gates covered domain invariants, Mockito application behavior, PostgreS
 
 The bounded capacity scenario uses one Kafka partition and one learner key to preserve source order, limits each poll to 10 records, and sends 60 unique completions plus 20 redeliveries. It verifies exactly 60 stored facts, the correct latest completion timestamp, 60 projected outcomes, 20 duplicate outcomes, and zero rejected or dead-letter outcomes. Multi-worker outbox exclusion remains covered separately by the PostgreSQL `SKIP LOCKED` concurrency integration test.
 
+Kafka-backed integration contexts are explicitly closed after each test class. This prevents cached Spring consumers and connection pools from surviving beyond their Testcontainers broker/database lifecycle and keeps later suites isolated.
+
 Final local gate:
 
 ```text
 mvn clean verify
-Tests run: 150, Failures: 0, Errors: 0, Skipped: 0
-JaCoCo: 87.43% line coverage (1,794 covered / 258 missed; 196 classes)
+Tests run: 151, Failures: 0, Errors: 0, Skipped: 0
+JaCoCo: 88.06% line coverage (1,807 covered / 245 missed; 196 classes)
 BUILD SUCCESS
 ```
 
@@ -76,6 +78,9 @@ BUILD SUCCESS
 - `af059f1 feat: consume completion events into analytics`
 - `9f5ceed feat: dead-letter failed event projections`
 - `3f7b1dc feat: expose learning event backlog signals`
+- `e3b5e12 docs: report analytics operability checkpoint`
+- `b33702a test: validate analytics event capacity`
+- `d860388 test: isolate Kafka consumer contexts`
 
 ## Remaining Phase 6.3 gate
 

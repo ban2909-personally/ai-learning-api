@@ -23,6 +23,11 @@ spring:
         enabled: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -83,6 +88,11 @@ app:
       retry-initial: ${LEARNING_EVENTS_RETRY_INITIAL:PT2S}
       retry-max: ${LEARNING_EVENTS_RETRY_MAX:PT5M}
   notifications:
+    consumer:
+      enabled: ${NOTIFICATION_KAFKA_ENABLED:false}
+      topic: ${LESSON_COMPLETED_TOPIC:ai-learning.learning.lesson-completed.v1}
+      group-id: ${NOTIFICATION_KAFKA_GROUP_ID:ai-learning-notifications-v1}
+      retry-delay: ${NOTIFICATION_KAFKA_RETRY_DELAY:PT10S}
     websocket:
       message-size: ${NOTIFICATION_WS_MESSAGE_SIZE:16KB}
       send-time-limit: ${NOTIFICATION_WS_SEND_TIME_LIMIT:PT10S}

@@ -113,7 +113,13 @@ Result:
 - `2d0ee85 feat: persist lesson completion events atomically`
 - `3e72f15 feat: dispatch learning events through Kafka`
 
-Feature/main GitHub Actions links and merge commit will be appended after both remote workflows complete successfully.
+## GitHub delivery evidence
+
+- Feature CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33853673527
+- Merge commit: `70c85c8 merge: deliver durable learning events`
+- Main CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33854119240
+
+Both remote workflows completed successfully after their corresponding local `clean verify` gate.
 
 ## Changed files
 

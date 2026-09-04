@@ -21,6 +21,17 @@ spring:
       port: ${REDIS_PORT:6379}
       repositories:
         enabled: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: ${LEARNING_EVENTS_KAFKA_DELIVERY_TIMEOUT_MS:10000}
+        request.timeout.ms: ${LEARNING_EVENTS_KAFKA_REQUEST_TIMEOUT_MS:5000}
+        max.block.ms: ${LEARNING_EVENTS_KAFKA_MAX_BLOCK_MS:10000}
   servlet:
     multipart:
       max-file-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
@@ -60,6 +71,17 @@ app:
     allowed-content-types:
       - video/mp4
       - video/webm
+  messaging:
+    learning-events:
+      enabled: ${LEARNING_EVENTS_KAFKA_ENABLED:false}
+      topic: ${LESSON_COMPLETED_TOPIC:ai-learning.learning.lesson-completed.v1}
+      batch-size: ${LEARNING_EVENTS_BATCH_SIZE:10}
+      poll-delay: ${LEARNING_EVENTS_POLL_DELAY:PT1S}
+      claim-lease: ${LEARNING_EVENTS_CLAIM_LEASE:PT5M}
+      send-timeout: ${LEARNING_EVENTS_SEND_TIMEOUT:PT10S}
+      producer-max-block-ms: ${LEARNING_EVENTS_KAFKA_MAX_BLOCK_MS:10000}
+      retry-initial: ${LEARNING_EVENTS_RETRY_INITIAL:PT2S}
+      retry-max: ${LEARNING_EVENTS_RETRY_MAX:PT5M}
   ai:
     mentor:
       quota:

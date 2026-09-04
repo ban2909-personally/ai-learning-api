@@ -8,8 +8,8 @@ Spring Boot backend for the B2C AI Learning Platform.
 - Spring Security, OAuth2 Resource Server and JWT
 - Spring Data JPA with Hibernate
 - Flyway migration-first schema management
-- PostgreSQL and Redis
-- JUnit 5 and Testcontainers
+- PostgreSQL, Redis, MinIO and optional Kafka event delivery
+- JUnit 5, Spring Modulith, ArchUnit and Testcontainers
 
 ## Run locally
 
@@ -34,8 +34,13 @@ Database schema changes must be delivered through Flyway migrations. Hibernate i
 
 ## Architecture
 
-The backend is a Spring Modulith modular monolith with `identity`, `catalog`, and `learning` bounded
-contexts. Business modules use hexagonal ports and adapters; domain/application code is protected by
-ArchUnit and cross-module access is restricted to named Modulith interfaces. Technical configuration,
-security, and web error handling live under `platform`; `sharedkernel` contains only minimal,
-framework-free semantics. See `docs/architecture/ADR-001-modular-monolith-and-hexagonal-modules.md`.
+The backend is a Spring Modulith modular monolith with `identity`, `catalog`, `learning`, and
+`mentoring` bounded contexts. Business modules use hexagonal ports and adapters; domain/application
+code is protected by ArchUnit and cross-module access is restricted to named Modulith interfaces.
+Technical configuration, security, and web error handling live under `platform`; `sharedkernel`
+contains only minimal, framework-free semantics. See
+`docs/architecture/ADR-001-modular-monolith-and-hexagonal-modules.md`.
+
+Learning integration events use a transactional PostgreSQL outbox and optional Kafka dispatcher. Kafka
+is disabled by default, so local progress writes do not require a broker. See
+`docs/architecture/ADR-003-transactional-learning-event-outbox.md` for delivery and operations constraints.

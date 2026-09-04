@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
 import java.time.Clock;
 
 @ApplicationModuleTest
@@ -29,6 +30,7 @@ class LearningModuleIntegrationTest {
     @MockitoBean EnrollmentJpaRepository enrollments;
     @MockitoBean LessonProgressJpaRepository lessonProgress;
     @MockitoBean PlatformTransactionManager transactionManager;
+    @MockitoBean DataSource dataSource;
 
     @Test
     void moduleBootstrapsInIsolation() {

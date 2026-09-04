@@ -124,6 +124,20 @@ Web:
 
 - `6abcdc7 feat: add responsive lesson AI mentor`
 
+Merge commits:
+
+- API `c0c08bb merge: deliver contextual AI mentor`
+- Web `c73f16a merge: deliver responsive lesson AI mentor`
+
+GitHub Actions verification:
+
+- API feature: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33776711650
+- Web feature: https://github.com/ban2909-personally/ai-learning-web/actions/runs/33776713875
+- API main: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33777282731
+- Web main: https://github.com/ban2909-personally/ai-learning-web/actions/runs/33777284332
+
+All four workflows completed successfully.
+
 ## Provider references
 
 Implementation choices were checked against the official OpenAI streaming and data-control documentation:

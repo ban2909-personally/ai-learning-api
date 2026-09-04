@@ -58,7 +58,7 @@ History remains ordinary JSON so refresh/reconnect does not replay an upstream s
 - [x] Run Maven `clean verify` with all Testcontainers.
 - [x] Run frontend typecheck, unit tests, production build, and responsive browser smoke test.
 - [x] Review diff for secrets, PII logging, module leaks, accidental API/schema changes, and generated artifacts.
-- [ ] Commit by cohesive slice, push the feature branch, wait for green CI, merge to `main`, push, and verify main CI.
+- [x] Commit by cohesive slice, push the feature branch, wait for green CI, merge to `main`, push, and verify main CI.
 
 ## Explicitly deferred
 

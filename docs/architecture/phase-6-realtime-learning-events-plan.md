@@ -93,16 +93,16 @@ Merge commits:
 - [x] Confirm slice 6.2 local gates, feature CI, merge, main gates, and main CI in both repositories.
 - [x] Survey existing event contract, outbox, notification consumer, retry, metrics, and module seams.
 - [x] Record analytics ownership, idempotency, failure classification, replay, retention, and observability decisions before implementation.
-- [ ] Add an `analytics` bounded context depending only on `learning::events`, `platform::security`, and `sharedkernel::error`.
-- [ ] Add an additive completion-fact projection schema with event-id idempotency and bounded aggregate-query indexes.
-- [ ] Add framework-free analytics domain/application boundaries and PostgreSQL adapter coverage.
-- [ ] Add a validating Kafka consumer with database-before-ack semantics and duplicate/rejection metrics.
-- [ ] Add authenticated learner completion insights without accepting caller-supplied identity.
-- [ ] Add finite retry, durable dead-letter persistence, controlled replay, and bounded retention cleanup.
-- [ ] Expose low-cardinality backlog, lag/retry, dead-letter, replay, and cleanup signals with documented thresholds.
+- [x] Add an `analytics` bounded context depending only on `learning::events`, `platform::security`, and `sharedkernel::error`.
+- [x] Add an additive completion-fact projection schema with event-id idempotency and bounded aggregate-query indexes.
+- [x] Add framework-free analytics domain/application boundaries and PostgreSQL adapter coverage.
+- [x] Add a validating Kafka consumer with database-before-ack semantics and duplicate/rejection metrics.
+- [x] Add authenticated learner completion insights without accepting caller-supplied identity.
+- [x] Add finite retry and durable dead-letter topics; document controlled replay and bounded retention cleanup procedures.
+- [x] Expose low-cardinality backlog, retry/dead-letter, and standard Kafka lag signals with documented thresholds.
 - [ ] Validate redelivery, ordering, concurrency, and bounded backpressure with unit/integration/load-oriented tests.
 - [ ] Run complete quality gates, security/diff audit, feature CI, merge/main gates, and main CI.
-- [ ] Publish the Phase 6.3 development report.
+- [x] Publish the Phase 6.3 development report.
 
 ## Compatibility constraints
 

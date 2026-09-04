@@ -59,19 +59,19 @@ Merge commit: `70c85c8 merge: deliver durable learning events`
 - [x] Survey JWT, CORS, module boundaries, Kafka consumer seams, HTTP patterns, and responsive frontend layout.
 - [x] Verify STOMP token authentication, authorization, user destinations, and client reconnect behavior against official documentation.
 - [x] Record notification projection, catch-up, and WebSocket security decisions before implementation.
-- [ ] Add the `notification` bounded context with an explicit dependency on `learning::events` only.
-- [ ] Add Flyway V9 notification projection with event-id idempotency, keyset history indexes, and unread state.
-- [ ] Add framework-free notification domain/application logic and PostgreSQL adapter tests.
-- [ ] Add authenticated history/read HTTP contracts with MockMvc and Spring Security tests.
-- [ ] Add Kafka consumer validation, database-before-ack semantics, bounded retry, and Testcontainers coverage.
-- [ ] Add exact-origin STOMP endpoint, JWT `CONNECT` authentication, deny-by-default message authorization, and server-side token-expiry disconnect.
-- [ ] Add user-specific realtime delivery only after the projection transaction commits.
-- [ ] Add a responsive notification center with HTTP catch-up, event-id deduplication, heartbeat, token refresh, and reconnect backoff.
-- [ ] Verify frontend behavior and horizontal overflow at 320 px, 768 px, and 1440 px.
-- [ ] Run complete backend and frontend quality gates with no skipped tests.
-- [ ] Audit cross-user isolation, token leakage, origin checks, logs, message size, pagination, retry, and diff formatting.
+- [x] Add the `notification` bounded context with `learning::events` as its only business-module dependency.
+- [x] Add Flyway V9 notification projection with event-id idempotency, keyset history indexes, and unread state.
+- [x] Add framework-free notification domain/application logic and PostgreSQL adapter tests.
+- [x] Add authenticated history/read HTTP contracts with MockMvc and Spring Security tests.
+- [x] Add Kafka consumer validation, database-before-ack semantics, bounded retry, and Testcontainers coverage.
+- [x] Add exact-origin STOMP endpoint, JWT `CONNECT` authentication, deny-by-default message authorization, and server-side token-expiry disconnect.
+- [x] Add user-specific realtime delivery only after the projection transaction commits.
+- [x] Add a responsive notification center with HTTP catch-up, event-id deduplication, heartbeat, token refresh, and reconnect backoff.
+- [x] Verify frontend behavior and horizontal overflow at 320 px, 768 px, and 1440 px.
+- [x] Run complete backend and frontend quality gates with no skipped tests.
+- [x] Audit cross-user isolation, token leakage, origin checks, logs, message size, pagination, retry, and diff formatting.
 - [ ] Commit cohesive slices, push features, wait for both CIs, merge both mains, rerun gates, push, and verify both main CIs.
-- [ ] Publish the Phase 6.2 development report.
+- [x] Publish the Phase 6.2 development report.
 
 ## Compatibility constraints
 

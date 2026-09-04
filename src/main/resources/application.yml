@@ -99,6 +99,12 @@ app:
       send-buffer-size: ${NOTIFICATION_WS_SEND_BUFFER_SIZE:512KB}
       first-message-timeout: ${NOTIFICATION_WS_FIRST_MESSAGE_TIMEOUT:PT30S}
       heartbeat: ${NOTIFICATION_WS_HEARTBEAT:PT10S}
+  analytics:
+    consumer:
+      enabled: ${ANALYTICS_KAFKA_ENABLED:false}
+      topic: ${LESSON_COMPLETED_TOPIC:ai-learning.learning.lesson-completed.v1}
+      group-id: ${ANALYTICS_KAFKA_GROUP_ID:ai-learning-analytics-v1}
+      retry-delay: ${ANALYTICS_KAFKA_RETRY_DELAY:PT10S}
   ai:
     mentor:
       quota:

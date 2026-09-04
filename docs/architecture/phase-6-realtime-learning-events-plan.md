@@ -44,8 +44,34 @@ Phase 6 creates a reliable event backbone for learning analytics and user-specif
 - [x] Add Kafka Testcontainers contract test for key, headers, and JSON payload.
 - [x] Run Maven `clean verify` with zero skipped tests and passing coverage/module/architecture gates.
 - [x] Audit secrets, PII, logs, payload size, retry behavior, multi-instance claims, and diff formatting.
-- [ ] Commit cohesive slices, push feature, wait for green CI, merge `main`, push, and verify main CI.
+- [x] Commit cohesive slices, push feature, wait for green CI, merge `main`, push, and verify main CI.
 - [x] Publish the Phase 6.1 development report.
+
+Feature CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33853673527
+
+Main CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33854119240
+
+Merge commit: `70c85c8 merge: deliver durable learning events`
+
+## Slice 6.2 checklist
+
+- [x] Confirm slice 6.1 feature/main CI success before starting new branches.
+- [x] Survey JWT, CORS, module boundaries, Kafka consumer seams, HTTP patterns, and responsive frontend layout.
+- [x] Verify STOMP token authentication, authorization, user destinations, and client reconnect behavior against official documentation.
+- [x] Record notification projection, catch-up, and WebSocket security decisions before implementation.
+- [x] Add the `notification` bounded context with `learning::events` as its only business-module dependency.
+- [x] Add Flyway V9 notification projection with event-id idempotency, keyset history indexes, and unread state.
+- [x] Add framework-free notification domain/application logic and PostgreSQL adapter tests.
+- [x] Add authenticated history/read HTTP contracts with MockMvc and Spring Security tests.
+- [x] Add Kafka consumer validation, database-before-ack semantics, bounded retry, and Testcontainers coverage.
+- [x] Add exact-origin STOMP endpoint, JWT `CONNECT` authentication, deny-by-default message authorization, and server-side token-expiry disconnect.
+- [x] Add user-specific realtime delivery only after the projection transaction commits.
+- [x] Add a responsive notification center with HTTP catch-up, event-id deduplication, heartbeat, token refresh, and reconnect backoff.
+- [x] Verify frontend behavior and horizontal overflow at 320 px, 768 px, and 1440 px.
+- [x] Run complete backend and frontend quality gates with no skipped tests.
+- [x] Audit cross-user isolation, token leakage, origin checks, logs, message size, pagination, retry, and diff formatting.
+- [ ] Commit cohesive slices, push features, wait for both CIs, merge both mains, rerun gates, push, and verify both main CIs.
+- [x] Publish the Phase 6.2 development report.
 
 ## Compatibility constraints
 

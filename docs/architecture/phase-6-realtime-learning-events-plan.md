@@ -70,8 +70,39 @@ Merge commit: `70c85c8 merge: deliver durable learning events`
 - [x] Verify frontend behavior and horizontal overflow at 320 px, 768 px, and 1440 px.
 - [x] Run complete backend and frontend quality gates with no skipped tests.
 - [x] Audit cross-user isolation, token leakage, origin checks, logs, message size, pagination, retry, and diff formatting.
-- [ ] Commit cohesive slices, push features, wait for both CIs, merge both mains, rerun gates, push, and verify both main CIs.
+- [x] Commit cohesive slices, push features, wait for both CIs, merge both mains, rerun gates, push, and verify both main CIs.
 - [x] Publish the Phase 6.2 development report.
+
+Feature CI:
+
+- Backend: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33886469597
+- Frontend: https://github.com/ban2909-personally/ai-learning-web/actions/runs/33886466096
+
+Main CI:
+
+- Backend: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33887264475
+- Frontend: https://github.com/ban2909-personally/ai-learning-web/actions/runs/33887253613
+
+Merge commits:
+
+- Backend: `e4985aa merge: deliver realtime notifications`
+- Frontend: `ff9915c merge: deliver realtime notifications`
+
+## Slice 6.3 checklist
+
+- [x] Confirm slice 6.2 local gates, feature CI, merge, main gates, and main CI in both repositories.
+- [x] Survey existing event contract, outbox, notification consumer, retry, metrics, and module seams.
+- [x] Record analytics ownership, idempotency, failure classification, replay, retention, and observability decisions before implementation.
+- [ ] Add an `analytics` bounded context depending only on `learning::events`, `platform::security`, and `sharedkernel::error`.
+- [ ] Add an additive completion-fact projection schema with event-id idempotency and bounded aggregate-query indexes.
+- [ ] Add framework-free analytics domain/application boundaries and PostgreSQL adapter coverage.
+- [ ] Add a validating Kafka consumer with database-before-ack semantics and duplicate/rejection metrics.
+- [ ] Add authenticated learner completion insights without accepting caller-supplied identity.
+- [ ] Add finite retry, durable dead-letter persistence, controlled replay, and bounded retention cleanup.
+- [ ] Expose low-cardinality backlog, lag/retry, dead-letter, replay, and cleanup signals with documented thresholds.
+- [ ] Validate redelivery, ordering, concurrency, and bounded backpressure with unit/integration/load-oriented tests.
+- [ ] Run complete quality gates, security/diff audit, feature CI, merge/main gates, and main CI.
+- [ ] Publish the Phase 6.3 development report.
 
 ## Compatibility constraints
 

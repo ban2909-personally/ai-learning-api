@@ -4,7 +4,7 @@ Date: 2026-09-04
 
 Branch: `feature/learning-analytics-operability`
 
-Status: implementation checkpoint and local quality gate complete; load/capacity validation and Git delivery remain open in the Phase 6 checklist.
+Status: implementation and local capacity validation complete; final feature/main Git delivery remains open in the Phase 6 checklist.
 
 ## Outcome
 
@@ -58,6 +58,8 @@ The outbox monitor runs only when event publication is enabled. It performs one 
 
 Targeted gates covered domain invariants, Mockito application behavior, PostgreSQL/Flyway projection queries, JWT-scoped MockMvc responses, Kafka envelope validation, consumer outcome metrics, DLT configuration, a real Kafka poison-record-to-DLT flow, outbox gauges, Spring Modulith isolation, and ArchUnit dependency rules.
 
+The bounded capacity scenario uses one Kafka partition and one learner key to preserve source order, limits each poll to 10 records, and sends 60 unique completions plus 20 redeliveries. It verifies exactly 60 stored facts, the correct latest completion timestamp, 60 projected outcomes, 20 duplicate outcomes, and zero rejected or dead-letter outcomes. Multi-worker outbox exclusion remains covered separately by the PostgreSQL `SKIP LOCKED` concurrency integration test.
+
 Final local gate:
 
 ```text
@@ -75,8 +77,7 @@ BUILD SUCCESS
 - `9f5ceed feat: dead-letter failed event projections`
 - `3f7b1dc feat: expose learning event backlog signals`
 
-## Remaining Phase 6.3 gates
+## Remaining Phase 6.3 gate
 
-- Run an explicit bounded load/capacity scenario for partition ordering, duplicate redelivery, database pressure, and consumer backpressure.
-- Complete feature CI, merge, rerun `main` gates, push, and verify `main` CI only after that capacity gate is accepted.
+- Complete final feature CI, merge, rerun `main` gates, push, and verify `main` CI.
 - A learner-facing frontend analytics view may be delivered as a separate responsive product slice; this backend checkpoint does not add an unused UI shell.

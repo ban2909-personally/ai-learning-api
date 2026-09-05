@@ -37,13 +37,13 @@ Phase 7 completes the paid-course journey with server-verified payment and then 
 - [x] Read the original project discussion and preserve Phase 7 Payments/B2B and Phase 8 Production Readiness ordering.
 - [x] Survey catalog price, free enrollment, identity lookup, persistence, transaction, security, module, and test seams.
 - [x] Record order ownership, idempotency, price snapshot, expiry, module dependency, and no-fake-payment decisions before code.
-- [ ] Add a narrow public enrollment-access lookup without exposing learning persistence.
-- [ ] Add commerce domain invariants, application ports/use cases, and Mockito unit tests.
-- [ ] Add Flyway V11 order schema, JPA adapter, conflict-safe idempotency, indexes, and PostgreSQL Testcontainers coverage.
-- [ ] Add JWT-subject-scoped create/history HTTP contracts with validation and Spring Security tests.
-- [ ] Add Spring Modulith isolation and preserve ArchUnit dependency direction.
+- [x] Add a narrow public enrollment-access lookup without exposing learning persistence.
+- [x] Add commerce domain invariants, application ports/use cases, and Mockito unit tests.
+- [x] Add Flyway V11 order schema, JPA adapter, conflict-safe idempotency, indexes, and PostgreSQL Testcontainers coverage.
+- [x] Add JWT-subject-scoped create/history HTTP contracts with validation and Spring Security tests.
+- [x] Add Spring Modulith isolation and preserve ArchUnit dependency direction.
 - [ ] Run complete Maven gates, security/diff audit, feature CI, merge-time main gates, and main CI.
-- [ ] Publish a Phase 7.1 development report with files, architecture, tests, security, performance, commits, and CI evidence.
+- [x] Publish a Phase 7.1 development report with files, architecture, tests, security, performance, commits, and CI evidence.
 
 ## Provider decision required before Slice 7.2
 

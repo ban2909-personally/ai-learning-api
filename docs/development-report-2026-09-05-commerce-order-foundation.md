@@ -2,7 +2,7 @@
 
 Date: 2026-09-05
 
-Status: implementation and local verification complete; Git delivery evidence is recorded below as it finishes.
+Status: delivered to `main`.
 
 ## Delivered behavior
 
@@ -70,8 +70,9 @@ Feature CI passed for the complete implementation/report commit. Merge-time veri
 
 - Feature branch: `feature/commerce-order-foundation`
 - Feature CI: [run 33959851087](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33959851087), exact head `d4a97bce632d8ce045e9f79c77402529fe77de06`, passed
-- Merge commit: pending
-- Main CI: pending
+- Final feature CI: [run 33960181390](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33960181390), exact head `13c28d1ba145e6996ff2f5fee16bf70b6fa1da9b`, passed
+- Merge commit: `2eb5df914249cfa2f5a68bd2a3ec032fd32fb433`
+- Main CI: [run 33960520144](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33960520144), exact merge head, passed
 
 ## Deferred decision
 

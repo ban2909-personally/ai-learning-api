@@ -54,7 +54,7 @@ Focused checks completed before the full gate:
 - Spring Boot executable JAR packaging passed.
 - JaCoCo analyzed 214 classes and the 70% bundle line-coverage gate passed.
 
-Feature CI, merge-time verification, and main CI evidence remain pending at the time this report is first written. A failed gate blocks push or merge.
+Feature CI passed for the complete implementation/report commit. Merge-time verification and main CI remain pending. A failed gate blocks push or merge.
 
 ## Cohesive commits
 
@@ -69,7 +69,7 @@ Feature CI, merge-time verification, and main CI evidence remain pending at the 
 ## Delivery evidence
 
 - Feature branch: `feature/commerce-order-foundation`
-- Feature CI: pending
+- Feature CI: [run 33959851087](https://github.com/ban2909-personally/ai-learning-api/actions/runs/33959851087), exact head `d4a97bce632d8ce045e9f79c77402529fe77de06`, passed
 - Merge commit: pending
 - Main CI: pending
 

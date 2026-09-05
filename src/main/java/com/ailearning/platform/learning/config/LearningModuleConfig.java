@@ -6,10 +6,12 @@ import com.ailearning.platform.catalog.api.usecase.learning.CourseLearningMediaL
 import com.ailearning.platform.identity.api.usecase.lookup.UserLookup;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalEnrollmentUseCase;
 import com.ailearning.platform.learning.adapter.in.transaction.TransactionalLessonProgressUseCase;
+import com.ailearning.platform.learning.api.usecase.access.EnrollmentAccessLookup;
 import com.ailearning.platform.learning.application.port.out.EnrollmentStore;
 import com.ailearning.platform.learning.application.port.out.LearningEventOutbox;
 import com.ailearning.platform.learning.application.port.out.LessonProgressStore;
 import com.ailearning.platform.learning.application.service.impl.EnrollmentService;
+import com.ailearning.platform.learning.application.service.impl.EnrollmentAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonMediaAccessService;
 import com.ailearning.platform.learning.application.service.impl.LessonProgressService;
@@ -23,6 +25,11 @@ import java.time.Clock;
 
 @Configuration
 public class LearningModuleConfig {
+    @Bean
+    EnrollmentAccessLookup enrollmentAccessLookup(EnrollmentStore enrollments) {
+        return new EnrollmentAccessService(enrollments);
+    }
+
     @Bean
     TransactionalLessonProgressUseCase lessonProgressUseCase(
             CourseLearningContentLookup content,

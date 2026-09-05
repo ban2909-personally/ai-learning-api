@@ -4,7 +4,7 @@ Date: 2026-09-04
 
 Branch: `feature/learning-analytics-operability`
 
-Status: implementation and all local quality gates complete; feature/main Git delivery remains open in the Phase 6 checklist.
+Status: delivered to `main`; local gates, feature CI, merge-time gates, and main CI are complete.
 
 ## Outcome
 
@@ -82,7 +82,9 @@ BUILD SUCCESS
 - `b33702a test: validate analytics event capacity`
 - `d860388 test: isolate Kafka consumer contexts`
 
-## Remaining Phase 6.3 gate
+## Delivery evidence
 
-- Complete final feature CI, merge, rerun `main` gates, push, and verify `main` CI.
-- A learner-facing frontend analytics view may be delivered as a separate responsive product slice; this backend checkpoint does not add an unused UI shell.
+- Feature CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33891301977
+- Main CI: https://github.com/ban2909-personally/ai-learning-api/actions/runs/33891852154
+- Merge commit: `7b10c45 merge: deliver learning analytics operability`
+- The separate responsive learner analytics view was delivered in frontend Phase 6.4 without adding UI concerns to this bounded context.

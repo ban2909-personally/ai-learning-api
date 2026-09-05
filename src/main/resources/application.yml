@@ -57,6 +57,9 @@ management:
         enabled: true
 
 app:
+  commerce:
+    orders:
+      pending-ttl: ${COMMERCE_ORDER_PENDING_TTL:PT30M}
   catalog:
     cache:
       popular:

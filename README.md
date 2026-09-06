@@ -10,6 +10,7 @@ Spring Boot backend for the B2C AI Learning Platform.
 - Flyway migration-first schema management
 - PostgreSQL, Redis, MinIO and optional Kafka event delivery
 - JUnit 5, Spring Modulith, ArchUnit and Testcontainers
+- Digest-pinned, non-root Distroless Java 21 production image
 
 ## Run locally
 
@@ -32,10 +33,23 @@ The verify lifecycle also enforces the JaCoCo line-coverage baseline and writes 
 
 Database schema changes must be delivered through Flyway migrations. Hibernate is configured with `ddl-auto=validate` and must not mutate the schema.
 
+## Production image
+
+Build the same container contract enforced by CI:
+
+```powershell
+docker build --tag ai-learning-api:local .
+```
+
+The image runs as numeric user `65532:65532`, activates the fail-closed `prod` profile, and contains
+only the executable JAR on a shell-less Java runtime. Required environment variables, probe endpoints,
+shutdown behavior, and local validation commands are documented in
+`docs/operations/production-container-runtime.md`.
+
 ## Architecture
 
-The backend is a Spring Modulith modular monolith with `identity`, `catalog`, `learning`, and
-`mentoring` bounded contexts. Business modules use hexagonal ports and adapters; domain/application
+The backend is a Spring Modulith modular monolith with `identity`, `catalog`, `learning`, `mentoring`,
+`notification`, `analytics`, `commerce`, and `organization` bounded contexts. Business modules use hexagonal ports and adapters; domain/application
 code is protected by ArchUnit and cross-module access is restricted to named Modulith interfaces.
 Technical configuration, security, and web error handling live under `platform`; `sharedkernel`
 contains only minimal, framework-free semantics. See

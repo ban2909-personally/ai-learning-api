@@ -2,7 +2,7 @@
 
 Date: 2026-09-06
 
-Status: implementation, local verification, and feature CI complete; merge delivery verification in progress.
+Status: delivered to `main`.
 
 ## Delivered behavior
 
@@ -58,8 +58,10 @@ Focused checks completed before the full gate:
 - JaCoCo analyzed 236 classes and the 70% bundle line-coverage gate passed.
 
 - Feature CI: [run 34006805830](https://github.com/ban2909-personally/ai-learning-api/actions/runs/34006805830), exact head `e576205031c45e4c736e6f73552962dd03100870`, passed.
-
-Merge-time verification and main CI evidence will be recorded after each exact gate succeeds. A failed gate blocks push or merge.
+- Final feature CI: [run 34006935507](https://github.com/ban2909-personally/ai-learning-api/actions/runs/34006935507), exact head `f9cd6314e51d39b48a19b19ffd842acfcd1f2efb`, passed.
+- Merge commit: `a7f7cc32ce607a9285b06f4e3f47c220ded43918`.
+- Merge-time `mvn verify`: 198 tests and all packaging/coverage gates passed again.
+- Main CI: [run 34007294484](https://github.com/ban2909-personally/ai-learning-api/actions/runs/34007294484), exact merge head, passed.
 
 ## Cohesive commits
 

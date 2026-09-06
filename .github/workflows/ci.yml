@@ -28,3 +28,21 @@ jobs:
 
       - name: Build and test
         run: mvn --batch-mode --no-transfer-progress verify
+
+  container-image:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --tag ai-learning-api:ci .
+
+      - name: Verify runtime contract
+        run: |
+          test "$(docker image inspect --format '{{.Config.User}}' ai-learning-api:ci)" = "65532:65532"
+          docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ai-learning-api:ci \
+            | grep --fixed-strings 'SPRING_PROFILES_ACTIVE=prod'
+          test "$(docker image inspect --format '{{json .Config.Entrypoint}}' ai-learning-api:ci)" \
+            = '["/usr/bin/java","-jar","/app/app.jar"]'

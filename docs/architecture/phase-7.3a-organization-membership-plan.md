@@ -10,8 +10,8 @@
 - [x] Add Flyway V12, separate JPA entities, conflict-safe creation, bounded queries, and PostgreSQL tests.
 - [x] Add JWT-scoped create/mine/roster endpoints with validation, MockMvc, and Spring Security tests.
 - [x] Add Spring Modulith isolated-module coverage and preserve ArchUnit rules.
-- [ ] Run complete Maven gates, diff/security audit, feature CI, merge-time gates, and main CI.
-- [ ] Publish a development report covering files, architecture, tests, security, performance, commits, and CI evidence.
+- [x] Run complete Maven gates, diff/security audit, feature CI, merge-time gates, and main CI.
+- [x] Publish a development report covering files, architecture, tests, security, performance, commits, and CI evidence.
 
 ## Controlled implementation sequence
 

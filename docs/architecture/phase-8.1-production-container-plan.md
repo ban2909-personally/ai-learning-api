@@ -5,12 +5,12 @@
 - [x] Confirm Phase 7.3a feature CI, merge-time verification, main CI, and synchronized repository state.
 - [x] Inspect current Maven, runtime configuration, CI, health probes, and infrastructure assumptions.
 - [x] Record the container, non-root, secret, health, CI, and deferral decisions before implementation.
-- [ ] Add a digest-pinned multi-stage Dockerfile and minimal build context.
-- [ ] Add a fail-closed production Spring profile with graceful shutdown and bounded runtime settings.
-- [ ] Add an operator runbook for required configuration, probes, filesystem, shutdown, and local image validation.
-- [ ] Extend CI so a complete Maven gate must pass before the container image is built and inspected.
-- [ ] Build and inspect the image locally, test production configuration failure/success paths, and rerun full Maven verification.
-- [ ] Perform diff, secret, image-content, and root-user audits.
+- [x] Add a digest-pinned multi-stage Dockerfile and minimal build context.
+- [x] Add a fail-closed production Spring profile with graceful shutdown and bounded runtime settings.
+- [x] Add an operator runbook for required configuration, probes, filesystem, shutdown, and local image validation.
+- [x] Extend CI so a complete Maven gate must pass before the container image is built and inspected.
+- [x] Build and inspect the image locally, test production configuration failure/success paths, and rerun full Maven verification.
+- [x] Perform diff, secret, image-content, and root-user audits.
 - [ ] Push the feature, wait for exact CI success, merge no-fast-forward, rerun all gates, push main, and wait for exact main CI success.
 - [ ] Publish a development report with changed files, security, performance, tests, commits, and CI evidence.
 

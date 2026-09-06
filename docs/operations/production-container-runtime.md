@@ -43,7 +43,7 @@ Supply secrets through the deployment platform at runtime. Never place them in t
 | `MINIO_MEDIA_BUCKET` | Lesson-media bucket | Existing private bucket. |
 | `OPENAI_API_KEY` | AI mentor provider key | Secret; scoped and monitored for usage. |
 
-The production profile deliberately fails placeholder resolution when required values are absent. Local defaults remain confined to the default development profile.
+The production profile deliberately fails startup when required values are absent; it never falls back to checked-in development credentials. Local defaults remain confined to the default development profile.
 
 ## Optional bounded tuning
 

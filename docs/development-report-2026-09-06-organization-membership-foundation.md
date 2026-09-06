@@ -2,7 +2,7 @@
 
 Date: 2026-09-06
 
-Status: implementation and local verification complete; remote delivery verification in progress.
+Status: implementation, local verification, and feature CI complete; merge delivery verification in progress.
 
 ## Delivered behavior
 
@@ -57,7 +57,9 @@ Focused checks completed before the full gate:
 - Spring Boot executable JAR packaging passed.
 - JaCoCo analyzed 236 classes and the 70% bundle line-coverage gate passed.
 
-Feature CI, merge-time verification, and main CI evidence will be recorded after each exact gate succeeds. A failed gate blocks push or merge.
+- Feature CI: [run 34006805830](https://github.com/ban2909-personally/ai-learning-api/actions/runs/34006805830), exact head `e576205031c45e4c736e6f73552962dd03100870`, passed.
+
+Merge-time verification and main CI evidence will be recorded after each exact gate succeeds. A failed gate blocks push or merge.
 
 ## Cohesive commits
 

@@ -5,11 +5,11 @@
 - [x] Close Phase 7.1 local, feature CI, merge, and main CI evidence.
 - [x] Inspect identity lookup, JWT ownership, persistence, transaction, Modulith, ArchUnit, and testing seams.
 - [x] Record tenant ownership, idempotency, slug, role, privacy, and deferred-capability decisions before code.
-- [ ] Add framework-free organization, membership, role, and authorization domain logic.
-- [ ] Add application commands, use cases, output ports, and Mockito tests.
-- [ ] Add Flyway V12, separate JPA entities, conflict-safe creation, bounded queries, and PostgreSQL tests.
-- [ ] Add JWT-scoped create/mine/roster endpoints with validation, MockMvc, and Spring Security tests.
-- [ ] Add Spring Modulith isolated-module coverage and preserve ArchUnit rules.
+- [x] Add framework-free organization, membership, role, and authorization domain logic.
+- [x] Add application commands, use cases, output ports, and Mockito tests.
+- [x] Add Flyway V12, separate JPA entities, conflict-safe creation, bounded queries, and PostgreSQL tests.
+- [x] Add JWT-scoped create/mine/roster endpoints with validation, MockMvc, and Spring Security tests.
+- [x] Add Spring Modulith isolated-module coverage and preserve ArchUnit rules.
 - [ ] Run complete Maven gates, diff/security audit, feature CI, merge-time gates, and main CI.
 - [ ] Publish a development report covering files, architecture, tests, security, performance, commits, and CI evidence.
 

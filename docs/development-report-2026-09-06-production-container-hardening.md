@@ -2,7 +2,7 @@
 
 Date: 2026-09-06
 
-Status: implementation and all local verification complete; remote delivery gates in progress.
+Status: implementation, all local verification, and the feature CI gate complete; merge delivery gates in progress.
 
 ## Delivered behavior
 
@@ -45,7 +45,7 @@ Status: implementation and all local verification complete; remote delivery gate
 - The final pre-push image rebuild passed with a 56.41 kB build context; runtime assertions reconfirmed UID/GID `65532:65532`, the `prod` profile, the absolute entrypoint, 168,918,168-byte image size, and absence of `/bin/sh`.
 - Repository diff checks passed; `pom.xml` is unchanged and the credential audit found only external environment-variable names and operator guidance.
 
-Feature CI including its container job, merge-time gates, and exact main CI evidence remain pending. Any failed gate blocks merge.
+Feature CI run `34008627055` passed for exact commit `e9cbc73782be1aac70446f0671e8103cef856db6`: both `verify` and the dependent `container-image` job completed successfully. Merge-time gates and exact main CI evidence remain pending. Any failed gate blocks merge.
 
 ## Cohesive commits
 
@@ -53,6 +53,7 @@ Feature CI including its container job, merge-time gates, and exact main CI evid
 - `202abcc` — add the digest-pinned non-root production image.
 - `e7453f0` — add the fail-closed production profile and binding test.
 - `aef3ac0` — add the dependent CI image gate, runbook, and README updates.
+- `e9cbc73` — record the complete local Maven, image, security, and runtime verification evidence.
 
 ## Explicitly deferred
 

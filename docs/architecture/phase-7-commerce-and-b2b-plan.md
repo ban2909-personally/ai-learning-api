@@ -42,12 +42,31 @@ Phase 7 completes the paid-course journey with server-verified payment and then 
 - [x] Add Flyway V11 order schema, JPA adapter, conflict-safe idempotency, indexes, and PostgreSQL Testcontainers coverage.
 - [x] Add JWT-subject-scoped create/history HTTP contracts with validation and Spring Security tests.
 - [x] Add Spring Modulith isolation and preserve ArchUnit dependency direction.
-- [ ] Run complete Maven gates, security/diff audit, feature CI, merge-time main gates, and main CI.
+- [x] Run complete Maven gates, security/diff audit, feature CI, merge-time main gates, and main CI.
 - [x] Publish a Phase 7.1 development report with files, architecture, tests, security, performance, commits, and CI evidence.
 
 ## Provider decision required before Slice 7.2
 
 The selected provider must be named before gateway code is written. The decision must include target market/currency, business/legal account readiness, redirect versus embedded checkout, webhook availability, refund requirements, sandbox credentials, and expected deployment region. No secret is placed in Git or chat.
+
+## Slice 7.3 controlled breakdown
+
+### Slice 7.3a — Organization and membership authorization foundation
+
+- Create an organization and its initial `OWNER` membership atomically and idempotently.
+- List the authenticated user's bounded organization memberships.
+- Allow only `OWNER` and `ADMIN` memberships to inspect a bounded roster.
+- Keep identity records private; organization stores only stable user ids.
+- Define the role matrix and audit requirements before any invitation or membership mutation exists.
+
+### Slice 7.3b — Invitations, seats, assignments, and reporting
+
+- Add expiring, single-use invitations without exposing whether an arbitrary email has an account.
+- Add subscription/seat capacity only after billing ownership and seat-count semantics are decided.
+- Allocate seats and assign catalog courses through public module contracts.
+- Add organization-scoped learning reporting with explicit authorization and bounded queries.
+
+Slice 7.3a deliberately creates no invitation, seat, subscription, assignment, or organization-admin frontend. Those capabilities need their own invariants and complete user journeys.
 
 ## Phase 8 boundary
 

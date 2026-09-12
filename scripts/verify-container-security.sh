@@ -4,19 +4,21 @@ set -euo pipefail
 # Run from the repository root after building ai-learning-api:ci.
 # The scanner receives an archive, never access to the host Docker daemon.
 scanner='aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969'
+scanner_user_args=(--user "$(id -u):$(id -g)")
 workspace_dir="$PWD"
 
 # Git Bash rewrites container paths unless MSYS conversion is disabled. Keep the
 # host side of bind mounts native while leaving container paths untouched.
 if command -v cygpath >/dev/null 2>&1; then
   workspace_dir="$(cygpath -w "$workspace_dir")"
+  scanner_user_args=()
   export MSYS_NO_PATHCONV=1
 fi
 mkdir -p target/security target/trivy-cache
 docker image save --output target/production-image.tar ai-learning-api:ci
 
 scan() {
-  docker run --rm --cap-drop ALL --security-opt no-new-privileges \
+  docker run --rm "${scanner_user_args[@]}" --cap-drop ALL --security-opt no-new-privileges \
     --mount "type=bind,source=$workspace_dir/target/production-image.tar,target=/input/image.tar,readonly" \
     --mount "type=bind,source=$workspace_dir/src/main,target=/source,readonly" \
     --mount "type=bind,source=$workspace_dir/target/security,target=/reports" \

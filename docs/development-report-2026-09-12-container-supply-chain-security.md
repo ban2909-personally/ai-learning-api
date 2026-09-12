@@ -38,6 +38,8 @@ The narrow version overrides exist only where Spring Boot 3.5.16's managed versi
 - The complete vulnerability artifact retains 60 findings for triage, including 6 HIGH/CRITICAL findings without a fix. The blocking policy found 0 fixed HIGH/CRITICAL vulnerabilities in both Debian 13.6 and the application JAR.
 - Source and image/config secret scans completed without a detected secret.
 - The production image passed a real startup smoke test as user `65532:65532` with read-only root filesystem, all capabilities dropped, and `no-new-privileges`. Readiness returned `UP` after all 12 Flyway migrations ran against an isolated PostgreSQL 17 instance on tmpfs.
+- Feature CI run `34704034885` exposed a non-reproducible test dependency: Docker Hub returned 404 for the previously cached `minio/minio` image, so Maven reported 199 tests with one container-fetch error and correctly skipped the dependent image job.
+- The MinIO integration test now pulls the same release from Quay by immutable multi-platform digest. Its targeted test passed, followed by another full `clean verify` with all 199 tests and the complete source/image security gate with 0 fixed HIGH/CRITICAL findings.
 
 ## Pending delivery gates
 

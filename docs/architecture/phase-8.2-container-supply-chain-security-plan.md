@@ -2,12 +2,12 @@
 
 - [x] Inspect clean branch, complete diff, Maven lifecycle, Docker and workflow.
 - [x] Record scope, scanner provenance, SBOMs, severity policy and exceptions before code.
-- [ ] Generate application SBOM during Maven verification.
-- [ ] Pin actions/frontend and scan the exact exported image with pinned Trivy.
-- [ ] Add source/image secret scans and retain bounded vulnerability/SBOM artifacts.
+- [x] Generate application SBOM during Maven verification.
+- [x] Pin actions/frontend and scan the exact exported image with pinned Trivy.
+- [x] Add source/image secret scans and retain bounded vulnerability/SBOM artifacts.
 - [ ] Validate SBOM contents, scan failure behavior and remediation requirements locally.
 - [ ] Run full Maven tests/coverage, Docker build/runtime assertions and security scans.
-- [ ] Review diff, write operations runbook and development report.
+- [x] Review diff, write operations runbook and development report.
 - [ ] Commit cohesive changes, push branch, verify CI, merge main, verify and push main, verify main CI.
 
 ## Phase 8.1 delivery evidence

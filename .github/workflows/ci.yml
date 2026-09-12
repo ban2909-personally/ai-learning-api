@@ -17,10 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           distribution: temurin
           java-version: '21'
@@ -29,12 +31,26 @@ jobs:
       - name: Build and test
         run: mvn --batch-mode --no-transfer-progress verify
 
+      - name: Verify application SBOM
+        run: |
+          jq --exit-status '.bomFormat == "CycloneDX" and .specVersion == "1.6" and (.components | length > 0)' target/application-sbom.json
+
+      - name: Retain application SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: application-sbom-${{ github.sha }}
+          path: target/application-sbom.json
+          if-no-files-found: error
+          retention-days: 14
+
   container-image:
     needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Build production image
         run: docker build --tag ai-learning-api:ci .
@@ -46,3 +62,22 @@ jobs:
             | grep --fixed-strings 'SPRING_PROFILES_ACTIVE=prod'
           test "$(docker image inspect --format '{{json .Config.Entrypoint}}' ai-learning-api:ci)" \
             = '["/usr/bin/java","-jar","/app/app.jar"]'
+
+      - name: Verify container security and generate image SBOM
+        id: security
+        run: bash scripts/verify-container-security.sh
+
+      - name: Verify image SBOM
+        run: |
+          jq --exit-status '.bomFormat == "CycloneDX" and (.components | length > 0)' target/security/image-sbom.json
+
+      - name: Retain image inventory and vulnerability evidence
+        if: ${{ always() && steps.security.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-security-${{ github.sha }}
+          path: |
+            target/security/image-sbom.json
+            target/security/vulnerabilities.json
+          if-no-files-found: error
+          retention-days: 14

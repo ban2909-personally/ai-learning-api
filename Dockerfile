@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
 FROM maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237 AS build
 
@@ -9,7 +9,7 @@ COPY src/main ./src/main
 RUN --mount=type=cache,target=/root/.m2 \
     mvn --batch-mode --no-transfer-progress -Dmaven.test.skip=true package
 
-FROM gcr.io/distroless/java21-debian12:nonroot@sha256:7e37784d94dccbf5ccb195c73b295f5ad00cd266512dfbac12eb9c3c28f8077d
+FROM gcr.io/distroless/java21-debian13:nonroot@sha256:bb0b3c7edc4417acdf76ea0f52bb5fae28881fe05aae6cc55af4cc4cb0200d2d
 
 LABEL org.opencontainers.image.title="AI Learning Platform API" \
       org.opencontainers.image.description="Modular monolith backend for the AI Learning Platform" \

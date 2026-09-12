@@ -6,7 +6,7 @@ Branch: `feature/container-supply-chain-security`
 
 ## Outcome
 
-Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. The remediated image now passes the complete local gate; remote branch and main delivery remain pending.
+Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. The remediated image now passes the complete local and feature CI gates; main delivery remains pending.
 
 ## Changes
 
@@ -40,9 +40,11 @@ The narrow version overrides exist only where Spring Boot 3.5.16's managed versi
 - The production image passed a real startup smoke test as user `65532:65532` with read-only root filesystem, all capabilities dropped, and `no-new-privileges`. Readiness returned `UP` after all 12 Flyway migrations ran against an isolated PostgreSQL 17 instance on tmpfs.
 - Feature CI run `34704034885` exposed a non-reproducible test dependency: Docker Hub returned 404 for the previously cached `minio/minio` image, so Maven reported 199 tests with one container-fetch error and correctly skipped the dependent image job.
 - The MinIO integration test now pulls the same release from Quay by immutable multi-platform digest. Its targeted test passed, followed by another full `clean verify` with all 199 tests and the complete source/image security gate with 0 fixed HIGH/CRITICAL findings.
+- Feature CI run `34705075885` passed `verify` and runtime image assertions, then exposed Linux bind-mount ownership on the Trivy cache. The scanner now uses the host UID:GID on Linux while retaining Git Bash path/permission handling on Windows.
+- Feature CI run `34705547964` passed both `verify` and `container-image` on commit `78a4565dd5b6d0646215aed54b3a8f72d6a3696d`.
 
 ## Pending delivery gates
 
-The local implementation is split into cohesive documentation, build/dependency, CI/scanner, and verification-report commits. None has been pushed or merged yet.
+The implementation is split into cohesive documentation, build/dependency, CI/scanner, test-infrastructure, and verification-report commits. The feature branch has been pushed and verified; it has not been merged.
 
-The remaining required sequence is: final diff/secret audit, feature push and exact CI success, no-fast-forward merge, repeat local Maven/container/security gates on `main`, push `main`, and exact main CI success.
+The remaining required sequence is: final diff/secret audit, exact CI success for the report-only feature SHA, no-fast-forward merge, repeat local Maven/container/security gates on `main`, push `main`, and exact main CI success.

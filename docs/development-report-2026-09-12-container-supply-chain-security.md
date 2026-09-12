@@ -6,7 +6,7 @@ Branch: `feature/container-supply-chain-security`
 
 ## Outcome
 
-Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. Delivery to the remote repository remains pending until the remediated image passes the complete local gate.
+Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. The remediated image now passes the complete local gate; remote branch and main delivery remain pending.
 
 ## Changes
 
@@ -33,12 +33,14 @@ The narrow version overrides exist only where Spring Boot 3.5.16's managed versi
 - Initial Trivy run: application/image SBOM generation and secret scans completed; the vulnerability policy failed as designed on the 38 remediable findings.
 - Remediated dependency tree: all named Java libraries resolve to the intended patched versions.
 - Remediated focused gate: 127 unit/architecture tests, 0 failures/errors/skips.
-- Remediated application SBOM: CycloneDX 1.6 JSON with 138 components; no XML output.
+- Remediated full gate: Maven `clean verify` passed all 199 tests with 0 failures/errors/skips, all 12 Flyway migrations, Spring Modulith, ArchUnit, and the JaCoCo 70% gate.
+- Remediated application SBOM: CycloneDX 1.6 JSON with 138 components; no XML output. The image SBOM is CycloneDX 1.7 with 153 components.
+- The complete vulnerability artifact retains 60 findings for triage, including 6 HIGH/CRITICAL findings without a fix. The blocking policy found 0 fixed HIGH/CRITICAL vulnerabilities in both Debian 13.6 and the application JAR.
+- Source and image/config secret scans completed without a detected secret.
+- The production image passed a real startup smoke test as user `65532:65532` with read-only root filesystem, all capabilities dropped, and `no-new-privileges`. Readiness returned `UP` after all 12 Flyway migrations ran against an isolated PostgreSQL 17 instance on tmpfs.
 
 ## Pending delivery gates
 
-Docker Desktop 4.44.2 currently crashes while removing the stale Windows AF_UNIX socket `dockerInference` (`Error 1920`). The failed Maven attempt skipped 66 Docker-backed tests and consequently failed coverage at 48%; it is intentionally not accepted as verification evidence.
+The local implementation is split into cohesive documentation, build/dependency, CI/scanner, and verification-report commits. None has been pushed or merged yet.
 
-After Docker is restored, the required sequence is: clean Maven verification with no skipped tests, production image rebuild, runtime assertions, source/image secret scans, final HIGH/CRITICAL scan, SBOM validation, diff/secret audit, cohesive commits, feature push and exact CI success, no-fast-forward merge, repeat local gates on `main`, push `main`, and exact main CI success.
-
-No commit containing the implementation is pushed or merged while these gates are pending.
+The remaining required sequence is: final diff/secret audit, feature push and exact CI success, no-fast-forward merge, repeat local Maven/container/security gates on `main`, push `main`, and exact main CI success.

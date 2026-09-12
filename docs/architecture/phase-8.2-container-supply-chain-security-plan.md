@@ -5,8 +5,8 @@
 - [x] Generate application SBOM during Maven verification.
 - [x] Pin actions/frontend and scan the exact exported image with pinned Trivy.
 - [x] Add source/image secret scans and retain bounded vulnerability/SBOM artifacts.
-- [ ] Validate SBOM contents, scan failure behavior and remediation requirements locally.
-- [ ] Run full Maven tests/coverage, Docker build/runtime assertions and security scans.
+- [x] Validate SBOM contents, scan failure behavior and remediation requirements locally.
+- [x] Run full Maven tests/coverage, Docker build/runtime assertions and security scans.
 - [x] Review diff, write operations runbook and development report.
 - [ ] Commit cohesive changes, push branch, verify CI, merge main, verify and push main, verify main CI.
 

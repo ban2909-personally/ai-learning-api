@@ -100,6 +100,9 @@ RPO/RTO.
 - Application SBOM validation passed as CycloneDX 1.6 with 138 components.
 - Diff/check, executable modes, generated-artifact scope, and credential-pattern
   audits passed. The only password assignment is a generated disposable drill value.
+- Feature CI run `34842957143` passed `verify`, `container-image`,
+  `postgres-recovery`, and `minio-recovery` for exact implementation/report commit
+  `b8f12b7cd17a26cbd915df59d07eefc0933af429`.
 
 ## Commits before delivery evidence
 
@@ -111,7 +114,7 @@ RPO/RTO.
 
 ## Pending delivery gates
 
-Commit this report, push the feature branch, and require the exact `verify`,
-`container-image`, `postgres-recovery`, and `minio-recovery` jobs to pass. Then merge
+Require the exact `verify`, `container-image`, `postgres-recovery`, and
+`minio-recovery` jobs to pass for this evidence-only commit. Then merge
 no-fast-forward, repeat local gates on the merge commit, push `main`, and require the
 same four jobs on that exact main SHA before Phase 8.3b is complete.

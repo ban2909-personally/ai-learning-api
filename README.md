@@ -37,6 +37,10 @@ The portable PostgreSQL backup/restore contract and isolated recovery drill are 
 `docs/operations/postgresql-recovery.md`. A generated dump is not considered recoverable until the
 restore and integrity checks pass.
 
+The current-object MinIO snapshot/restore contract, consistency limits, and isolated
+three-server recovery drill are documented in `docs/operations/minio-recovery.md`.
+It deliberately does not claim object-version history or production retention.
+
 ## Production image
 
 Build the same container contract enforced by CI:

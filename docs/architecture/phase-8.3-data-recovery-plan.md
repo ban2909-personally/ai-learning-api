@@ -42,11 +42,11 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
   MinIO Client mirror, checksum, diff, and metadata behavior before implementation.
 - [x] Decide a portable current-object inventory and checksum manifest while keeping
   version history and provider retention claims explicit.
-- [ ] Add current-object snapshot/restore procedures without copying MinIO's live
+- [x] Add current-object snapshot/restore procedures without copying MinIO's live
   filesystem, exposing credentials, or pretending version history is covered.
-- [ ] Prove restore into an isolated MinIO instance, including object bytes,
+- [x] Prove restore into an isolated MinIO instance, including object bytes,
   metadata, and missing/extra-object detection.
-- [ ] Define application/database/object consistency limits and the order of a full
+- [x] Define application/database/object consistency limits and the order of a full
   recovery exercise.
 - [ ] Bind bucket versioning, object lock, retention, replication, and deletion
   recovery to the selected production object-store provider in Phase 8.3c.

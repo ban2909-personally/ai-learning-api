@@ -97,3 +97,25 @@ jobs:
 
       - name: Prove isolated PostgreSQL recovery
         run: bash scripts/test-postgres-recovery.sh
+
+  minio-recovery:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Verify recovery script syntax
+        run: >-
+          bash -n
+          scripts/create-minio-inventory.sh
+          scripts/backup-minio.sh
+          scripts/restore-minio.sh
+          scripts/verify-minio-restore.sh
+          scripts/test-minio-recovery.sh
+
+      - name: Prove isolated MinIO current-object recovery
+        run: bash scripts/test-minio-recovery.sh

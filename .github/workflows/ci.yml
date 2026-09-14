@@ -81,3 +81,19 @@ jobs:
             target/security/vulnerabilities.json
           if-no-files-found: error
           retention-days: 14
+
+  postgres-recovery:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Verify recovery script syntax
+        run: bash -n scripts/backup-postgres.sh scripts/restore-postgres.sh scripts/test-postgres-recovery.sh
+
+      - name: Prove isolated PostgreSQL recovery
+        run: bash scripts/test-postgres-recovery.sh

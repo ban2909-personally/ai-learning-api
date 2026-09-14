@@ -31,7 +31,7 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
   measured versus promised RPO/RTO.
 - [x] Run script checks, negative paths, the isolated recovery drill, full Maven
   verification, and repository/security audits.
-- [ ] Commit cohesive changes, push the feature, wait for exact feature CI, merge
+- [x] Commit cohesive changes, push the feature, wait for exact feature CI, merge
   no-fast-forward, repeat local gates, push main, and wait for exact main CI.
 
 ### Phase 8.3b — MinIO object recovery
@@ -48,6 +48,12 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
   metadata, and missing/extra-object detection.
 - [x] Define application/database/object consistency limits and the order of a full
   recovery exercise.
+- [x] Document credential handling, least privilege, backup/restore/verify steps,
+  failure handling, and limits that remain provider-specific.
+- [x] Pass Bash syntax, positive and negative recovery paths, full Maven verification,
+  application SBOM validation, repository/security audits, and Docker cleanup checks.
+- [ ] Push the complete feature, require exact four-job feature CI success, merge
+  no-fast-forward, repeat local gates, push main, and require exact main CI success.
 - [ ] Bind bucket versioning, object lock, retention, replication, and deletion
   recovery to the selected production object-store provider in Phase 8.3c.
 

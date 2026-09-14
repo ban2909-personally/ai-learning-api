@@ -15,6 +15,8 @@ started_at="$(date +%s)"
 
 script_directory="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 script_mount_source="$script_directory"
+export PGPASSWORD="$database_password"
+export POSTGRES_PASSWORD="$database_password"
 
 # Git Bash rewrites container paths unless conversion is disabled. Keep the host
 # bind source native and all container paths unchanged.
@@ -32,6 +34,7 @@ cleanup() {
   docker rm --force "$source_container" "$restore_container" >/dev/null 2>&1 || true
   docker volume rm --force "$backup_volume" >/dev/null 2>&1 || true
   docker network rm "$network_name" >/dev/null 2>&1 || true
+  unset PGPASSWORD POSTGRES_PASSWORD
 }
 
 wait_for_database() {
@@ -64,7 +67,7 @@ run_restore() {
     --env PGPORT=5432 \
     --env PGDATABASE="$restore_database" \
     --env PGUSER="$database_user" \
-    --env PGPASSWORD="$database_password" \
+    --env PGPASSWORD \
     --env BACKUP_FILE="$backup_file" \
     --env RESTORE_CONFIRMATION="$confirmation" \
     "$postgres_image" bash /scripts/restore-postgres.sh
@@ -102,7 +105,7 @@ for container_spec in \
     --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid,size=256m \
     --env POSTGRES_DB="$database_name" \
     --env POSTGRES_USER="$database_user" \
-    --env POSTGRES_PASSWORD="$database_password" \
+    --env POSTGRES_PASSWORD \
     --health-cmd "pg_isready --username $database_user --dbname $database_name" \
     --health-interval 2s \
     --health-timeout 2s \
@@ -161,7 +164,7 @@ docker run --rm \
   --env PGPORT=5432 \
   --env PGDATABASE="$source_database" \
   --env PGUSER="$database_user" \
-  --env PGPASSWORD="$database_password" \
+  --env PGPASSWORD \
   --env BACKUP_OUTPUT_DIR=/backups \
   "$postgres_image" bash /scripts/backup-postgres.sh
 

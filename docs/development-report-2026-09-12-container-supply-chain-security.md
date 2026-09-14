@@ -6,7 +6,7 @@ Branch: `feature/container-supply-chain-security`
 
 ## Outcome
 
-Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. The remediated image now passes the complete local and feature CI gates; main delivery remains pending.
+Phase 8.2 adds reproducible application/image inventories and a fail-closed container security gate without changing an HTTP contract, database migration, or business module boundary. The remediated image passed the complete local, feature, merge-time, and main CI gates.
 
 ## Changes
 
@@ -42,9 +42,9 @@ The narrow version overrides exist only where Spring Boot 3.5.16's managed versi
 - The MinIO integration test now pulls the same release from Quay by immutable multi-platform digest. Its targeted test passed, followed by another full `clean verify` with all 199 tests and the complete source/image security gate with 0 fixed HIGH/CRITICAL findings.
 - Feature CI run `34705075885` passed `verify` and runtime image assertions, then exposed Linux bind-mount ownership on the Trivy cache. The scanner now uses the host UID:GID on Linux while retaining Git Bash path/permission handling on Windows.
 - Feature CI run `34705547964` passed both `verify` and `container-image` on commit `78a4565dd5b6d0646215aed54b3a8f72d6a3696d`.
+- Final feature CI run `34705802749` passed both jobs on `7b410eb9d94422d5e97b5c37a37de071bce3e779`.
+- Merge `1b70f2a66960fa8a4b996f71259f3319f051a3d2` repeated all 199 Maven tests, SBOM/security gates, 12 migrations, and the hardened runtime smoke test locally. Main CI run `34747663121` passed `verify` and `container-image` for that exact SHA.
 
-## Pending delivery gates
+## Delivery status
 
-The implementation is split into cohesive documentation, build/dependency, CI/scanner, test-infrastructure, and verification-report commits. The feature branch has been pushed and verified; it has not been merged.
-
-The remaining required sequence is: final diff/secret audit, exact CI success for the report-only feature SHA, no-fast-forward merge, repeat local Maven/container/security gates on `main`, push `main`, and exact main CI success.
+The implementation was split into cohesive documentation, build/dependency, CI/scanner, test-infrastructure, and verification-report commits. It was merged no-fast-forward only after exact feature CI success, then independently reverified before `main` was pushed. Phase 8.2 is complete; later signing, registry publication, periodic rescanning, backup recovery, SLO, and deployment decisions remain separate work.

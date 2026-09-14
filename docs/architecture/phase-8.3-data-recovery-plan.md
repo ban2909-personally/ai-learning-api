@@ -23,11 +23,11 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
 - [x] Reconfirm a clean synchronized main after exact Phase 8.2 main CI success.
 - [x] Inspect the current runtime, CI, local infrastructure, and deferred decisions.
 - [x] Record the portable PostgreSQL recovery contract before implementation.
-- [ ] Add fail-closed backup and restore scripts without adding database tools to the
+- [x] Add fail-closed backup and restore scripts without adding database tools to the
   application image.
-- [ ] Add an isolated automated drill with representative relational data and
+- [x] Add an isolated automated drill with representative relational data and
   schema/data integrity assertions.
-- [ ] Document operator prerequisites, secure artifact handling, failure modes, and
+- [x] Document operator prerequisites, secure artifact handling, failure modes, and
   measured versus promised RPO/RTO.
 - [ ] Run script checks, negative paths, the isolated recovery drill, full Maven
   verification, and repository/security audits.

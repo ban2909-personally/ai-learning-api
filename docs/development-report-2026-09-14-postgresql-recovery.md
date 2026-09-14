@@ -92,6 +92,8 @@ production scheduling/retention/encryption, or a business-approved RPO/RTO.
 - Repository diff/check, executable mode, generated-artifact, and credential-pattern
   audits passed. The only password assignment in the drill is a generated disposable
   value; production scripts contain no credential value.
+- Feature CI run `34835933891` passed `verify`, `container-image`, and
+  `postgres-recovery` on commit `3f2424638f5717db95bedbdc64aeb1a224a58afb`.
 
 ## Commits before delivery evidence
 
@@ -103,7 +105,6 @@ production scheduling/retention/encryption, or a business-approved RPO/RTO.
 
 ## Pending delivery gates
 
-Push the feature branch, require exact success from `verify`, `container-image`, and
-`postgres-recovery`, merge no-fast-forward, repeat local gates on the merge commit,
-push `main`, and require exact main CI success. Phase 8.3b MinIO recovery starts only
-after this sequence completes.
+Require exact CI success for the final report commit, merge no-fast-forward, repeat
+local gates on the merge commit, push `main`, and require exact main CI success.
+Phase 8.3b MinIO recovery starts only after this sequence completes.

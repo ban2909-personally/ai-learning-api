@@ -36,13 +36,20 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
 
 ### Phase 8.3b — MinIO object recovery
 
-- [ ] Decide a portable object inventory and checksum manifest.
-- [ ] Add bucket versioning/object recovery procedures without copying MinIO's live
-  filesystem or exposing credentials.
+- [x] Close Phase 8.3a only after final feature CI, no-fast-forward merge, repeated
+  local gates, and exact main CI success.
+- [x] Inspect the application object-key/metadata contract and verify the selected
+  MinIO Client mirror, checksum, diff, and metadata behavior before implementation.
+- [x] Decide a portable current-object inventory and checksum manifest while keeping
+  version history and provider retention claims explicit.
+- [ ] Add current-object snapshot/restore procedures without copying MinIO's live
+  filesystem, exposing credentials, or pretending version history is covered.
 - [ ] Prove restore into an isolated MinIO instance, including object bytes,
   metadata, and missing/extra-object detection.
 - [ ] Define application/database/object consistency limits and the order of a full
   recovery exercise.
+- [ ] Bind bucket versioning, object lock, retention, replication, and deletion
+  recovery to the selected production object-store provider in Phase 8.3c.
 
 ### Phase 8.3c — Operational policy integration
 
@@ -68,3 +75,12 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
 - invitation delivery provider and seat billing/capacity semantics;
 - production hosting, registry/signing, encrypted backup destination, retention,
   business RPO/RTO, SLOs, capacity targets, and alert routing.
+
+## Phase 8.3a delivery evidence
+
+Final feature run `34836352979` passed `verify`, `container-image`, and
+`postgres-recovery` at `a789d181e127af3cec0ba70e16d44fb7db544872`. Merge
+`b555fc510176795ca482774411c01a200c27c907` then passed the recovery drill,
+all 199 Maven tests, 12 migrations, architecture and coverage gates, application and
+image SBOM validation, image metadata assertions, vulnerability policy, and secret
+scans locally. Main run `34838327062` passed all three jobs for that exact merge SHA.

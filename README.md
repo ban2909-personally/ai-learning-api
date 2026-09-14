@@ -33,6 +33,10 @@ The verify lifecycle also enforces the JaCoCo line-coverage baseline and writes 
 
 Database schema changes must be delivered through Flyway migrations. Hibernate is configured with `ddl-auto=validate` and must not mutate the schema.
 
+The portable PostgreSQL backup/restore contract and isolated recovery drill are documented in
+`docs/operations/postgresql-recovery.md`. A generated dump is not considered recoverable until the
+restore and integrity checks pass.
+
 ## Production image
 
 Build the same container contract enforced by CI:

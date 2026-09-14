@@ -29,7 +29,7 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
   schema/data integrity assertions.
 - [x] Document operator prerequisites, secure artifact handling, failure modes, and
   measured versus promised RPO/RTO.
-- [ ] Run script checks, negative paths, the isolated recovery drill, full Maven
+- [x] Run script checks, negative paths, the isolated recovery drill, full Maven
   verification, and repository/security audits.
 - [ ] Commit cohesive changes, push the feature, wait for exact feature CI, merge
   no-fast-forward, repeat local gates, push main, and wait for exact main CI.

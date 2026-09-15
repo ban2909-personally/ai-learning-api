@@ -52,7 +52,7 @@ hardened runtime smoke test. Main run `34747663121` passed `verify` and
   failure handling, and limits that remain provider-specific.
 - [x] Pass Bash syntax, positive and negative recovery paths, full Maven verification,
   application SBOM validation, repository/security audits, and Docker cleanup checks.
-- [ ] Push the complete feature, require exact four-job feature CI success, merge
+- [x] Push the complete feature, require exact four-job feature CI success, merge
   no-fast-forward, repeat local gates, push main, and require exact main CI success.
 - [ ] Bind bucket versioning, object lock, retention, replication, and deletion
   recovery to the selected production object-store provider in Phase 8.3c.
@@ -90,3 +90,17 @@ Final feature run `34836352979` passed `verify`, `container-image`, and
 all 199 Maven tests, 12 migrations, architecture and coverage gates, application and
 image SBOM validation, image metadata assertions, vulnerability policy, and secret
 scans locally. Main run `34838327062` passed all three jobs for that exact merge SHA.
+
+## Phase 8.3b delivery evidence
+
+Feature run `34842957143` passed all four jobs at implementation/report commit
+`b8f12b7cd17a26cbd915df59d07eefc0933af429`. Final feature run `34843900103`
+passed `verify`, `container-image`, `postgres-recovery`, and `minio-recovery` at
+evidence commit `4d84f28a78cf00d828399f9ea096010d7a6cdcb6`.
+
+No-fast-forward merge `039e1a07f043019b0a1687b2351efaf1b55a54cf` then passed the
+hardened MinIO drill, PostgreSQL regression drill, all 199 Maven tests, 12 Flyway
+migrations, Spring Modulith, ArchUnit, JaCoCo, application/image SBOM validation,
+runtime metadata assertions, source/image secret scans, and the fixed
+HIGH/CRITICAL vulnerability policy locally. Main run `34944318649` passed all four
+jobs for that exact merge SHA.

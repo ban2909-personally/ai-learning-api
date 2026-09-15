@@ -41,6 +41,10 @@ The current-object MinIO snapshot/restore contract, consistency limits, and isol
 three-server recovery drill are documented in `docs/operations/minio-recovery.md`.
 It deliberately does not claim object-version history or production retention.
 
+The isolated public-catalog performance regression baseline is documented in
+`docs/operations/catalog-performance-baseline.md`. Its CI latency budgets detect
+large regressions but are deliberately not production SLOs or capacity claims.
+
 ## Production image
 
 Build the same container contract enforced by CI:

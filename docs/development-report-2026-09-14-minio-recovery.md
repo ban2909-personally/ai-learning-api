@@ -112,9 +112,17 @@ RPO/RTO.
 - `f9d2eb7` — add the independent MinIO recovery CI gate.
 - `b7cef71` — add the operations runbook and close the local implementation checklist.
 
-## Pending delivery gates
+## Delivery evidence
 
-Require the exact `verify`, `container-image`, `postgres-recovery`, and
-`minio-recovery` jobs to pass for this evidence-only commit. Then merge
-no-fast-forward, repeat local gates on the merge commit, push `main`, and require the
-same four jobs on that exact main SHA before Phase 8.3b is complete.
+- Final feature CI run `34843900103` passed `verify`, `container-image`,
+  `postgres-recovery`, and `minio-recovery` for exact evidence commit
+  `4d84f28a78cf00d828399f9ea096010d7a6cdcb6`.
+- No-fast-forward merge `039e1a07f043019b0a1687b2351efaf1b55a54cf`
+  repeated the MinIO and PostgreSQL drills, full Maven verification, runtime image
+  contract, source/image secret scans, application/image SBOM validation, and fixed
+  HIGH/CRITICAL vulnerability gate locally before push.
+- Main CI run `34944318649` passed the same four jobs for that exact merge SHA.
+
+Phase 8.3b is complete. Phase 8.3c remains blocked on a selected production
+environment, provider capabilities, retention/encryption ownership, alert routing,
+and business-approved RPO/RTO; no values are inferred by this report.

@@ -130,10 +130,25 @@ artifact is `catalog-performance-c7da9f930bbbc4deac1e6f3e1999faaf5a0f1cb2`
 (artifact `10388307349`, 471 bytes); application-SBOM and image-security artifacts
 were also retained for the same SHA.
 
-Local pre-push gates and initial feature CI are complete. Exact feature CI for the
-final evidence commit, no-fast-forward merge, repeated merge gates, and exact main
-CI remain pending and must be recorded before Phase 8.4a is complete.
+Final feature CI run `34949088389` passed all five jobs for exact evidence commit
+`c926ac94e0ac93a4fffbfb1499e2bfec7bd1c803`.
 
-Phase 8.4b remains the next engineering slice for resource diagnosis and broader
-subsystem-specific profiles. Phase 8.4c remains blocked on real topology, traffic,
-quotas, business-approved SLIs/SLOs, capacity policy, alerting, and ownership.
+No-fast-forward merge `f5eaaf9e39e584ea7bec3bcd2fe136487303919f`
+repeated the public-catalog workload, PostgreSQL and MinIO recovery drills, all 199
+Maven tests, 12 Flyway migrations, Modulith/ArchUnit/JaCoCo, runtime contract,
+application/image SBOM, fixed HIGH/CRITICAL vulnerability, source/image secret,
+cleanup, and clean-worktree gates before push. The merge workload achieved 750
+iterations with 100% checks, no request failure or dropped iteration, p95 `15.531
+ms`, and p99 `32.834 ms`.
+
+Main CI run `34980286932` passed `verify`, `container-image`,
+`postgres-recovery`, `minio-recovery`, and `performance-baseline` for that exact
+merge SHA. Its compact performance artifact is
+`catalog-performance-f5eaaf9e39e584ea7bec3bcd2fe136487303919f` (artifact
+`10401696271`, 471 bytes); the application-SBOM and image-security artifacts were
+also retained for the same SHA.
+
+Phase 8.4a is complete. Phase 8.4b remains the next engineering slice for resource
+diagnosis and broader subsystem-specific profiles. Phase 8.4c remains blocked on
+real topology, traffic, quotas, business-approved SLIs/SLOs, capacity policy,
+alerting, and ownership.

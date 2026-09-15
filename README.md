@@ -44,6 +44,9 @@ It deliberately does not claim object-version history or production retention.
 The isolated public-catalog performance regression baseline is documented in
 `docs/operations/catalog-performance-baseline.md`. Its CI latency budgets detect
 large regressions but are deliberately not production SLOs or capacity claims.
+Opt-in JVM, pool, PostgreSQL, Redis, and container resource diagnosis is documented
+in `docs/operations/catalog-resource-diagnostics.md`; it records evidence without
+inventing production resource limits.
 
 ## Production image
 

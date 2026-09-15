@@ -28,12 +28,27 @@ exact SHA after all local merge gates passed.
 - [x] Add an independent CI job after correctness and production-image gates.
 - [x] Document operation, interpretation, tuning discipline, security, and measured
   local results.
-- [ ] Record exact feature and main CI performance results for their delivered SHAs.
-- [ ] Pass full local gates, cohesive commits, exact feature CI, no-fast-forward
+- [x] Record exact feature and main CI performance results for their delivered SHAs.
+- [x] Pass full local gates, cohesive commits, exact feature CI, no-fast-forward
   merge, repeated merge gates, exact main CI, and delivery reporting.
 
 ### Phase 8.4b — Broader capacity and resource diagnosis
 
+- [x] Record a resource-diagnostics ADR and keep the existing regression workload
+  unchanged by making observation opt-in and independently gated.
+- [x] Sample application, PostgreSQL, and Redis container CPU/memory plus application
+  PID, JVM-memory, and Hikari active/pending evidence during the catalog workload.
+- [x] Capture final application cache counters, PostgreSQL database counters, and
+  Redis keyspace/memory counters in a versioned compact non-secret summary.
+- [x] Keep temporary Actuator metrics JWT-protected and reachable only through the
+  isolated loopback-bound test runtime; never alter production exposure defaults.
+- [x] Validate local diagnostic evidence, failure behavior, cleanup, default-mode
+  isolation, and add an independent CI job without inventing resource limits.
+- [ ] Pass the diagnostics job and retain both compact summaries for exact feature
+  and main delivery SHAs.
+- [x] Document the diagnosis, comparison, security, and cleanup workflow.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
 - [ ] Add authenticated read/write profiles only with isolated identities and safe
   deterministic cleanup.
 - [ ] Cover event throughput, WebSocket fan-out, AI concurrency/cost bounds, and
@@ -65,5 +80,15 @@ exact SHA after all local merge gates passed.
 
 Production SLO/capacity policy remains blocked on hosting topology, regions, instance
 sizing, traffic forecasts, business criticality, provider quotas, budget, alert
-routing, and named operational owners. Phase 8.4a proceeds only as a portable
-regression baseline.
+routing, and named operational owners. Phase 8.4a remains only a portable
+regression baseline, and Phase 8.4b1 adds diagnosis rather than production limits.
+
+## Phase 8.4a delivery evidence
+
+- Final feature CI run `34949088389` passed all five jobs for exact evidence SHA
+  `c926ac94e0ac93a4fffbfb1499e2bfec7bd1c803`.
+- No-fast-forward merge `f5eaaf9e39e584ea7bec3bcd2fe136487303919f`
+  passed the repeated local performance, PostgreSQL/MinIO recovery, Maven,
+  production-image runtime, SBOM, vulnerability, secret, cleanup, and diff gates.
+- Main CI run `34980286932` passed all five jobs for that exact merge SHA. Its
+  compact performance artifact `10401696271` is non-empty at 471 bytes.

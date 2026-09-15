@@ -5,6 +5,7 @@ postgres_image='postgres:17-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77
 redis_image='redis:7.4-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf'
 k6_image='grafana/k6:2.2.0@sha256:9bd01d6941fca969cb61bb57d2da5ee9b385fe2aa8881df3798c196564d6ace6'
 app_image="${PERFORMANCE_APP_IMAGE:-ai-learning-api:ci}"
+capture_resources="${PERFORMANCE_CAPTURE_RESOURCES:-false}"
 resource_prefix="ai-learning-performance-$(date -u +'%s')-$$"
 network_name="$resource_prefix-network"
 postgres_container="$resource_prefix-postgres"
@@ -14,6 +15,10 @@ k6_container="$resource_prefix-k6"
 database_name='ai_learning_performance'
 database_user='performance_operator'
 started_at="$(date +%s)"
+collector_pid=''
+diagnostics_directory=''
+diagnostics_stop_file=''
+diagnostics_samples_file=''
 
 export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
 export REDIS_PASSWORD="$(openssl rand -hex 24)"
@@ -54,6 +59,10 @@ fail() {
 }
 
 cleanup() {
+  if [[ -n "$collector_pid" ]] && kill -0 "$collector_pid" >/dev/null 2>&1; then
+    kill "$collector_pid" >/dev/null 2>&1 || true
+    wait "$collector_pid" >/dev/null 2>&1 || true
+  fi
   docker rm --force \
     "$k6_container" "$app_container" "$redis_container" "$postgres_container" \
     >/dev/null 2>&1 || true
@@ -62,6 +71,14 @@ cleanup() {
   unset REDIS_HOST REDIS_PORT JWT_SECRET JWT_ISSUER CORS_ALLOWED_ORIGIN
   unset KAFKA_BOOTSTRAP_SERVERS OPENAI_API_KEY MINIO_ENDPOINT
   unset MINIO_ACCESS_KEY MINIO_SECRET_KEY MINIO_MEDIA_BUCKET
+  unset DIAGNOSTICS_APP_PORT DIAGNOSTICS_APP_CONTAINER
+  unset DIAGNOSTICS_POSTGRES_CONTAINER DIAGNOSTICS_REDIS_CONTAINER
+  unset DIAGNOSTICS_DATABASE_NAME DIAGNOSTICS_DATABASE_USER
+  unset DIAGNOSTICS_BEARER_TOKEN DIAGNOSTICS_APP_IMAGE_ID DIAGNOSTICS_STOP_FILE
+  unset DIAGNOSTICS_SAMPLES_FILE DIAGNOSTICS_OUTPUT_FILE
+  [[ -z "$diagnostics_stop_file" ]] || rm -f -- "$diagnostics_stop_file"
+  [[ -z "$diagnostics_samples_file" ]] || rm -f -- "$diagnostics_samples_file"
+  [[ -z "$diagnostics_directory" ]] || rmdir -- "$diagnostics_directory" 2>/dev/null || true
 }
 
 wait_for_database() {
@@ -120,11 +137,23 @@ done
 docker info >/dev/null 2>&1 || fail 'Docker daemon is unavailable'
 docker image inspect "$app_image" >/dev/null 2>&1 \
   || fail "application image $app_image is unavailable; build it before running the baseline"
+[[ "$capture_resources" == 'true' || "$capture_resources" == 'false' ]] \
+  || fail 'PERFORMANCE_CAPTURE_RESOURCES must be true or false'
 [[ -f "$performance_directory/catalog-seed.sql" ]] || fail 'catalog seed file is missing'
 [[ -f "$performance_directory/catalog-read.js" ]] || fail 'k6 workload file is missing'
+if [[ "$capture_resources" == 'true' ]]; then
+  for command_name in awk kill mktemp sed sleep; do
+    command -v "$command_name" >/dev/null 2>&1 \
+      || fail "required diagnostics command $command_name is unavailable"
+  done
+  [[ -x "$script_directory/collect-catalog-resource-diagnostics.sh" ]] \
+    || fail 'catalog resource collector is missing or not executable'
+fi
 
 mkdir -p "$results_directory"
-rm -f -- "$results_directory/catalog-performance-summary.json"
+rm -f -- \
+  "$results_directory/catalog-performance-summary.json" \
+  "$results_directory/catalog-resource-summary.json"
 
 docker network create --label ai-learning.performance=catalog "$network_name" >/dev/null
 
@@ -166,6 +195,13 @@ docker run --detach \
 wait_for_database
 wait_for_redis
 
+application_diagnostics_arguments=()
+if [[ "$capture_resources" == 'true' ]]; then
+  application_diagnostics_arguments+=(
+    --env MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
+  )
+fi
+
 docker run --detach \
   --name "$app_container" \
   --network "$network_name" \
@@ -193,6 +229,7 @@ docker run --detach \
   --env MINIO_ACCESS_KEY \
   --env MINIO_SECRET_KEY \
   --env MINIO_MEDIA_BUCKET \
+  "${application_diagnostics_arguments[@]}" \
   "$app_image" >/dev/null
 
 application_port="$(wait_for_application)"
@@ -213,6 +250,53 @@ curl --fail --silent --show-error \
   "http://127.0.0.1:$application_port/api/v1/courses?size=12" \
   >/dev/null || fail 'catalog warm-up request failed'
 
+if [[ "$capture_resources" == 'true' ]]; then
+  metrics_response="$(curl --silent --show-error --write-out $'\n%{http_code}' \
+    "http://127.0.0.1:$application_port/actuator/metrics")" \
+    || fail 'unauthenticated metrics security probe failed'
+  metrics_status="${metrics_response##*$'\n'}"
+  unset metrics_response
+  [[ "$metrics_status" == '401' ]] \
+    || fail "unauthenticated metrics request returned HTTP $metrics_status instead of 401"
+
+  diagnostics_password="$(openssl rand -hex 24)"
+  diagnostics_email="diagnostics-$resource_prefix@example.invalid"
+  registration_response="$({
+    printf '{"email":"%s","password":"%s","displayName":"Performance Diagnostics"}' \
+      "$diagnostics_email" "$diagnostics_password"
+  } | curl --fail --silent --show-error \
+    --header 'Content-Type: application/json' \
+    --data-binary @- \
+    "http://127.0.0.1:$application_port/api/v1/auth/register")" \
+    || fail 'disposable diagnostics identity could not be registered'
+  diagnostics_token="$(printf '%s' "$registration_response" \
+    | sed -n 's/.*"accessToken"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  [[ "$diagnostics_token" =~ ^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$ ]] \
+    || fail 'registration response did not contain a valid access-token shape'
+  unset registration_response diagnostics_password
+
+  diagnostics_directory="$(mktemp -d "${TMPDIR:-/tmp}/ai-learning-performance.XXXXXX")"
+  diagnostics_stop_file="$diagnostics_directory/stop"
+  diagnostics_samples_file="$diagnostics_directory/samples.tsv"
+  export DIAGNOSTICS_APP_PORT="$application_port"
+  export DIAGNOSTICS_APP_CONTAINER="$app_container"
+  export DIAGNOSTICS_POSTGRES_CONTAINER="$postgres_container"
+  export DIAGNOSTICS_REDIS_CONTAINER="$redis_container"
+  export DIAGNOSTICS_DATABASE_NAME="$database_name"
+  export DIAGNOSTICS_DATABASE_USER="$database_user"
+  export DIAGNOSTICS_BEARER_TOKEN="$diagnostics_token"
+  export DIAGNOSTICS_APP_IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$app_image")"
+  export DIAGNOSTICS_STOP_FILE="$diagnostics_stop_file"
+  export DIAGNOSTICS_SAMPLES_FILE="$diagnostics_samples_file"
+  export DIAGNOSTICS_OUTPUT_FILE="$results_directory/catalog-resource-summary.json"
+  "$script_directory/collect-catalog-resource-diagnostics.sh" &
+  collector_pid="$!"
+  unset diagnostics_token DIAGNOSTICS_BEARER_TOKEN
+  sleep 2
+  kill -0 "$collector_pid" >/dev/null 2>&1 \
+    || fail 'catalog resource collector exited before the workload started'
+fi
+
 docker run --rm \
   --name "$k6_container" \
   --network "$network_name" \
@@ -227,6 +311,28 @@ docker run --rm \
   --env BASE_URL="http://$app_container:8080" \
   "$k6_image" run --quiet /workload/catalog-read.js \
   || fail 'k6 workload or a regression threshold failed'
+
+if [[ "$capture_resources" == 'true' ]]; then
+  : >"$diagnostics_stop_file"
+  wait "$collector_pid" || fail 'catalog resource collector failed'
+  collector_pid=''
+  resource_summary_file="$results_directory/catalog-resource-summary.json"
+  [[ -s "$resource_summary_file" ]] || fail 'resource summary file is missing or empty'
+  grep --quiet '"format": "ai-learning-catalog-resource-v1"' "$resource_summary_file" \
+    || fail 'resource summary format marker is missing'
+  for resource_name in \
+    maxJvmUsedBytes \
+    maxHikariActive \
+    maxHikariPending \
+    catalogCacheHits \
+    catalogCacheFailures \
+    deadlocks \
+    keyspaceHits \
+    usedMemoryPeakBytes; do
+    grep --extended-regexp --quiet "\"$resource_name\"[[:space:]]*:" "$resource_summary_file" \
+      || fail "resource summary field $resource_name is missing"
+  done
+fi
 
 summary_file="$results_directory/catalog-performance-summary.json"
 [[ -s "$summary_file" ]] || fail 'k6 summary file is missing or empty'

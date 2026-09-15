@@ -46,8 +46,9 @@ exact SHA after all local merge gates passed.
   isolation, and add an independent CI job without inventing resource limits.
 - [ ] Pass the diagnostics job and retain both compact summaries for exact feature
   and main delivery SHAs.
-- [ ] Document diagnosis and comparison workflow; pass full local, feature CI,
-  no-fast-forward merge, repeated merge gates, and exact main CI delivery.
+- [x] Document the diagnosis, comparison, security, and cleanup workflow.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
 - [ ] Add authenticated read/write profiles only with isolated identities and safe
   deterministic cleanup.
 - [ ] Cover event throughput, WebSocket fan-out, AI concurrency/cost bounds, and

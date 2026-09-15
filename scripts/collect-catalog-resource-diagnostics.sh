@@ -50,16 +50,18 @@ metric_value() {
   printf '%s' "$value"
 }
 
-container_stats() {
-  local container="$1"
+container_stats_from_snapshot() {
+  local snapshot="$1"
+  local container="$2"
   local values
   local cpu
   local memory
   local pids
 
-  values="$(docker stats --no-stream \
-    --format '{{.CPUPerc}}\t{{.MemPerc}}\t{{.PIDs}}' "$container")" \
-    || fail "Docker stats failed for $container"
+  values="$(printf '%s\n' "$snapshot" \
+    | awk -F '\t' -v container="$container" \
+      '$1 == container {print $2 "\t" $3 "\t" $4; exit}')"
+  [[ -n "$values" ]] || fail "Docker stats snapshot is missing $container"
   IFS=$'\t' read -r cpu memory pids <<<"$values"
   cpu="${cpu%%%}"
   memory="${memory%%%}"
@@ -81,7 +83,7 @@ redis_info_value() {
   printf '%s' "$value"
 }
 
-for command_name in awk curl date docker sed sleep; do
+for command_name in awk curl date docker sed; do
   command -v "$command_name" >/dev/null 2>&1 \
     || fail "required command $command_name is unavailable"
 done
@@ -92,9 +94,13 @@ printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tred
   >"$samples_file"
 
 while [[ ! -e "$stop_file" ]]; do
-  app_stats="$(container_stats "$app_container")"
-  postgres_stats="$(container_stats "$postgres_container")"
-  redis_stats="$(container_stats "$redis_container")"
+  stats_snapshot="$(docker stats --no-stream \
+    --format '{{.Name}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.PIDs}}' \
+    "$app_container" "$postgres_container" "$redis_container")" \
+    || fail 'Docker resource snapshot failed'
+  app_stats="$(container_stats_from_snapshot "$stats_snapshot" "$app_container")"
+  postgres_stats="$(container_stats_from_snapshot "$stats_snapshot" "$postgres_container")"
+  redis_stats="$(container_stats_from_snapshot "$stats_snapshot" "$redis_container")"
   jvm_used="$(metric_value jvm.memory.used)"
   hikari_active="$(metric_value hikaricp.connections.active)"
   hikari_pending="$(metric_value hikaricp.connections.pending)"
@@ -109,24 +115,26 @@ while [[ ! -e "$stop_file" ]]; do
     "$redis_cpu" "$redis_memory" \
     "$jvm_used" "$hikari_active" "$hikari_pending" \
     >>"$samples_file"
-  sleep 2
 done
 
 read -r sample_count max_app_cpu max_app_memory max_app_pids \
   max_postgres_cpu max_postgres_memory max_redis_cpu max_redis_memory \
-  max_jvm_used max_hikari_active max_hikari_pending <<<"$(
+  max_jvm_used max_hikari_active max_hikari_pending observed_span <<<"$(
     awk -F '\t' '
       NR == 1 { next }
       {
+        if (count == 0) first_epoch = $1
+        last_epoch = $1
         count++
         for (column = 2; column <= 11; column++) {
           if (count == 1 || $column + 0 > maximum[column]) maximum[column] = $column + 0
         }
       }
       END {
-        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f", count,
+        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d", count,
           maximum[2], maximum[3], maximum[4], maximum[5], maximum[6],
-          maximum[7], maximum[8], maximum[9], maximum[10], maximum[11]
+          maximum[7], maximum[8], maximum[9], maximum[10], maximum[11],
+          last_epoch - first_epoch
       }
     ' "$samples_file"
   )"
@@ -164,13 +172,20 @@ redis_hits="$(redis_info_value stats keyspace_hits)"
 redis_misses="$(redis_info_value stats keyspace_misses)"
 redis_evictions="$(redis_info_value stats evicted_keys)"
 redis_peak_memory="$(redis_info_value memory used_memory_peak)"
+awk -v application="$cache_hits" -v server="$redis_hits" \
+  'BEGIN { exit !(application + 0 == server + 0) }' \
+  || fail "application cache hits $cache_hits do not match Redis hits $redis_hits"
+awk -v application="$cache_misses" -v server="$redis_misses" \
+  'BEGIN { exit !(application + 0 == server + 0) }' \
+  || fail "application cache misses $cache_misses do not match Redis misses $redis_misses"
 
 generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 printf '{\n' >"$output_file"
 printf '  "format": "ai-learning-catalog-resource-v1",\n' >>"$output_file"
 printf '  "generatedAtUtc": "%s",\n' "$generated_at" >>"$output_file"
 printf '  "workload": {"datasetPublishedCourses": 5000, "ratePerSecond": 25, "durationSeconds": 30},\n' >>"$output_file"
-printf '  "samples": {"count": %s, "intervalSeconds": 2},\n' "$sample_count" >>"$output_file"
+printf '  "samples": {"count": %s, "minimumRequired": 10, "observedSpanSeconds": %s},\n' \
+  "$sample_count" "$observed_span" >>"$output_file"
 printf '  "application": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids": %s, "maxJvmUsedBytes": %s, "maxHikariActive": %s, "maxHikariPending": %s, "catalogCacheHits": %s, "catalogCacheMisses": %s, "catalogCacheFailures": %s},\n' \
   "$max_app_cpu" "$max_app_memory" "$max_app_pids" "$max_jvm_used" \
   "$max_hikari_active" "$max_hikari_pending" \

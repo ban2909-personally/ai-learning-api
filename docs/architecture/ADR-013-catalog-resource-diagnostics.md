@@ -33,9 +33,11 @@ resource thresholds.
   contract with a generated password. Keep its access token only in process memory,
   pass it to the sampler by environment variable name, never print it, and destroy
   it with the ephemeral PostgreSQL container.
-- Sample every two seconds while k6 runs. Record maximum application, PostgreSQL,
-  and Redis container CPU and memory percentages, application PID count, JVM used
-  memory, and Hikari active and pending connections.
+- Sample continuously while k6 runs and require at least ten observations. Record
+  the observed span plus maximum application, PostgreSQL, and Redis container CPU
+  and memory percentages, application PID count, JVM used memory, and Hikari active
+  and pending connections. Do not claim a fixed interval because Docker's
+  no-stream statistics cycle and host scheduling determine the actual cadence.
 - Capture final existing `catalog.cache.access` hit/miss/failure counters,
   PostgreSQL database sessions/transactions/block reads/cache hits/temp
   files/bytes/deadlocks, and Redis keyspace hits/misses/evictions/peak memory.

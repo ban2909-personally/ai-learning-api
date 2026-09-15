@@ -28,12 +28,24 @@ exact SHA after all local merge gates passed.
 - [x] Add an independent CI job after correctness and production-image gates.
 - [x] Document operation, interpretation, tuning discipline, security, and measured
   local results.
-- [ ] Record exact feature and main CI performance results for their delivered SHAs.
-- [ ] Pass full local gates, cohesive commits, exact feature CI, no-fast-forward
+- [x] Record exact feature and main CI performance results for their delivered SHAs.
+- [x] Pass full local gates, cohesive commits, exact feature CI, no-fast-forward
   merge, repeated merge gates, exact main CI, and delivery reporting.
 
 ### Phase 8.4b — Broader capacity and resource diagnosis
 
+- [ ] Record a resource-diagnostics ADR and keep the existing regression workload
+  unchanged by making observation opt-in and independently gated.
+- [ ] Sample application, PostgreSQL, and Redis container CPU/memory plus application
+  PID, JVM-memory, and Hikari active/pending evidence during the catalog workload.
+- [ ] Capture final application cache counters, PostgreSQL database counters, and
+  Redis keyspace/memory counters in a versioned compact non-secret summary.
+- [ ] Keep temporary Actuator metrics JWT-protected and reachable only through the
+  isolated loopback-bound test runtime; never alter production exposure defaults.
+- [ ] Validate diagnostic evidence, failure behavior, cleanup, and an independent CI
+  job without inventing CPU, JVM, pool, database, or cache limits from one runner.
+- [ ] Document diagnosis and comparison workflow; pass full local, feature CI,
+  no-fast-forward merge, repeated merge gates, and exact main CI delivery.
 - [ ] Add authenticated read/write profiles only with isolated identities and safe
   deterministic cleanup.
 - [ ] Cover event throughput, WebSocket fan-out, AI concurrency/cost bounds, and
@@ -67,3 +79,13 @@ Production SLO/capacity policy remains blocked on hosting topology, regions, ins
 sizing, traffic forecasts, business criticality, provider quotas, budget, alert
 routing, and named operational owners. Phase 8.4a proceeds only as a portable
 regression baseline.
+
+## Phase 8.4a delivery evidence
+
+- Final feature CI run `34949088389` passed all five jobs for exact evidence SHA
+  `c926ac94e0ac93a4fffbfb1499e2bfec7bd1c803`.
+- No-fast-forward merge `f5eaaf9e39e584ea7bec3bcd2fe136487303919f`
+  passed the repeated local performance, PostgreSQL/MinIO recovery, Maven,
+  production-image runtime, SBOM, vulnerability, secret, cleanup, and diff gates.
+- Main CI run `34980286932` passed all five jobs for that exact merge SHA. Its
+  compact performance artifact `10401696271` is non-empty at 471 bytes.

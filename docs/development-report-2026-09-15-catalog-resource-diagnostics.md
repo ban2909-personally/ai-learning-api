@@ -77,23 +77,23 @@ pool, thread/heap setting, module dependency, or runtime image content.
 ## Final local diagnostic evidence
 
 The final documented run used production image content ID
-`sha256:d7cb1d42c9e27e1a66b581a0011104e64396bdb1a2bf89c200a9eed6ea4896ea`,
+`sha256:e416978581222819c80822a42b95f294b5989d2f050c9c88eaf0c80cdebbc378`,
 5,000 courses, 25 iterations per second for 30 seconds, and the original 60/25/15
 catalog path mix.
 
 - Correctness checks: `1.0`; iterations: `751`; request failures: `0`; dropped
-  iterations: `0`; p95: `18.526 ms`; p99: `27.705 ms`.
-- Sampling: `10` observations over `32` seconds (minimum required: `10`).
-- Application: max CPU `63.95%`, max memory `33.94%` of its container limit, max
-  PIDs `37`, max JVM used memory `245,841,384` bytes, max Hikari active `1`, max
+  iterations: `0`; p95: `16.243 ms`; p99: `27.220 ms`.
+- Sampling: `10` observations over `31` seconds (minimum required: `10`).
+- Application: max CPU `56.96%`, max memory `34.42%` of its container limit, max
+  PIDs `36`, max JVM used memory `249,542,504` bytes, max Hikari active `0`, max
   Hikari pending `0`.
 - Application cache: `455` hits, `1` miss, `0` failures.
-- PostgreSQL: max CPU `8.97%`, max memory `1.19%`; `7` final connections, `464`
-  commits, `0` rollbacks, `510` block reads, `177,008` block hits, `0` temporary
+- PostgreSQL: max CPU `14.63%`, max memory `1.21%`; `7` final connections, `496`
+  commits, `0` rollbacks, `510` block reads, `177,843` block hits, `0` temporary
   files/bytes, and `0` deadlocks.
-- Redis: max CPU `1.26%`, max memory `0.05%`; `455` keyspace hits, `1` miss, `0`
-  evictions, and peak used memory `1,172,896` bytes.
-- End-to-end diagnostics duration: `58` seconds including startup, Flyway, seed,
+- Redis: max CPU `0.99%`, max memory `0.05%`; `455` keyspace hits, `1` miss, `0`
+  evictions, and peak used memory `1,172,928` bytes.
+- End-to-end diagnostics duration: `62` seconds including startup, Flyway, seed,
   warm-up, JWT security probe/registration, workload, summary validation, and
   cleanup.
 
@@ -113,9 +113,25 @@ not justify lowering/raising any limit or predicting production capacity.
   validator now permits JSON whitespace while still requiring every named field.
 - The final diagnostic run passed image-ID, summary format, numeric, sample-count,
   cache consistency, zero cache-failure, k6, and cleanup checks.
-- A separate default-mode run passed 751 iterations with no failures/drops, p95
-  `17.913 ms`, p99 `25.950 ms`, did not expose/start diagnostics, removed the old
+- A separate default-mode run passed 750 iterations with no failures/drops, p95
+  `16.475 ms`, p99 `25.179 ms`, did not expose/start diagnostics, removed the old
   resource summary, and left no labeled container/network.
+
+## Full pre-push quality gates
+
+- `mvn --batch-mode --no-transfer-progress clean verify` passed `199` tests with no
+  failures/errors/skips, all JaCoCo checks, all module/architecture checks, all 12
+  Flyway migrations, and generated an application SBOM with `138` components.
+- The production image passed its non-root UID/GID, `prod` profile, immutable
+  entrypoint, and shell-less runtime contract.
+- The image SBOM contains `153` components. The complete vulnerability inventory
+  contains `60` findings for triage, while the blocking scan found `0` fixable
+  HIGH/CRITICAL vulnerabilities; source and image secret scans were clean.
+- PostgreSQL recovery passed in `17` seconds and MinIO current-object recovery
+  passed in `37` seconds, including their fail-closed refusal paths.
+- All shell scripts passed syntax validation. Both performance modes passed on the
+  exact production image, their cache/Redis counters agreed, and cleanup left no
+  labeled container or network.
 
 ## Commits before full delivery gates
 
@@ -129,7 +145,8 @@ not justify lowering/raising any limit or predicting production capacity.
 
 ## Delivery status
 
-Functional and security behavior is locally proven. Full Maven, recovery,
-production-image security, feature CI, final evidence commit, no-fast-forward merge,
-repeated merge gates, and exact main CI remain pending. Phase 8.4b1 is not complete
-until those gates and the non-empty CI artifacts pass for the delivered SHAs.
+Functional, security, full Maven, recovery, production-image, and performance gates
+are locally proven. Exact feature CI, its final evidence commit, no-fast-forward
+merge, repeated merge gates, and exact main CI remain pending. Phase 8.4b1 is not
+complete until those gates and the non-empty CI artifacts pass for the delivered
+SHAs.

@@ -98,6 +98,11 @@ Do not add an index, expand pools or threads, enlarge heap, or weaken caching,
 authorization, encryption, logging, or recovery controls based only on this summary.
 Resource diagnosis and broader traffic profiles belong to Phase 8.4b.
 
+For an isolated opt-in run that correlates this workload with JVM, Hikari,
+PostgreSQL, Redis, and container resource evidence, follow
+`docs/operations/catalog-resource-diagnostics.md`. The default command above does
+not expose Actuator metrics or create a resource summary.
+
 ## Isolation, security, and cleanup
 
 The orchestrator creates a unique labeled Docker network and PostgreSQL, Redis,

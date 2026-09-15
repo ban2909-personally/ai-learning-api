@@ -34,16 +34,18 @@ exact SHA after all local merge gates passed.
 
 ### Phase 8.4b — Broader capacity and resource diagnosis
 
-- [ ] Record a resource-diagnostics ADR and keep the existing regression workload
+- [x] Record a resource-diagnostics ADR and keep the existing regression workload
   unchanged by making observation opt-in and independently gated.
-- [ ] Sample application, PostgreSQL, and Redis container CPU/memory plus application
+- [x] Sample application, PostgreSQL, and Redis container CPU/memory plus application
   PID, JVM-memory, and Hikari active/pending evidence during the catalog workload.
-- [ ] Capture final application cache counters, PostgreSQL database counters, and
+- [x] Capture final application cache counters, PostgreSQL database counters, and
   Redis keyspace/memory counters in a versioned compact non-secret summary.
-- [ ] Keep temporary Actuator metrics JWT-protected and reachable only through the
+- [x] Keep temporary Actuator metrics JWT-protected and reachable only through the
   isolated loopback-bound test runtime; never alter production exposure defaults.
-- [ ] Validate diagnostic evidence, failure behavior, cleanup, and an independent CI
-  job without inventing CPU, JVM, pool, database, or cache limits from one runner.
+- [x] Validate local diagnostic evidence, failure behavior, cleanup, default-mode
+  isolation, and add an independent CI job without inventing resource limits.
+- [ ] Pass the diagnostics job and retain both compact summaries for exact feature
+  and main delivery SHAs.
 - [ ] Document diagnosis and comparison workflow; pass full local, feature CI,
   no-fast-forward merge, repeated merge gates, and exact main CI delivery.
 - [ ] Add authenticated read/write profiles only with isolated identities and safe
@@ -77,8 +79,8 @@ exact SHA after all local merge gates passed.
 
 Production SLO/capacity policy remains blocked on hosting topology, regions, instance
 sizing, traffic forecasts, business criticality, provider quotas, budget, alert
-routing, and named operational owners. Phase 8.4a proceeds only as a portable
-regression baseline.
+routing, and named operational owners. Phase 8.4a remains only a portable
+regression baseline, and Phase 8.4b1 adds diagnosis rather than production limits.
 
 ## Phase 8.4a delivery evidence
 

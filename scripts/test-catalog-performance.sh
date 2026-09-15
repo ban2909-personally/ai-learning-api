@@ -10,6 +10,7 @@ network_name="$resource_prefix-network"
 postgres_container="$resource_prefix-postgres"
 redis_container="$resource_prefix-redis"
 app_container="$resource_prefix-api"
+k6_container="$resource_prefix-k6"
 database_name='ai_learning_performance'
 database_user='performance_operator'
 started_at="$(date +%s)"
@@ -54,7 +55,7 @@ fail() {
 
 cleanup() {
   docker rm --force \
-    "$app_container" "$redis_container" "$postgres_container" \
+    "$k6_container" "$app_container" "$redis_container" "$postgres_container" \
     >/dev/null 2>&1 || true
   docker network rm "$network_name" >/dev/null 2>&1 || true
   unset POSTGRES_PASSWORD REDIS_PASSWORD REDISCLI_AUTH DB_URL DB_USERNAME DB_PASSWORD
@@ -213,7 +214,7 @@ curl --fail --silent --show-error \
   >/dev/null || fail 'catalog warm-up request failed'
 
 docker run --rm \
-  --name "$resource_prefix-k6" \
+  --name "$k6_container" \
   --network "$network_name" \
   --label ai-learning.performance=catalog \
   "${k6_user_arguments[@]}" \

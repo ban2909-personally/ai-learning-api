@@ -151,10 +151,9 @@ if [[ "$capture_resources" == 'true' ]]; then
 fi
 
 mkdir -p "$results_directory"
-rm -f -- "$results_directory/catalog-performance-summary.json"
-if [[ "$capture_resources" == 'true' ]]; then
-  rm -f -- "$results_directory/catalog-resource-summary.json"
-fi
+rm -f -- \
+  "$results_directory/catalog-performance-summary.json" \
+  "$results_directory/catalog-resource-summary.json"
 
 docker network create --label ai-learning.performance=catalog "$network_name" >/dev/null
 

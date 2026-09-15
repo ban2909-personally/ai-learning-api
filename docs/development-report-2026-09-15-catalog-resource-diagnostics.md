@@ -133,6 +133,23 @@ not justify lowering/raising any limit or predicting production capacity.
   exact production image, their cache/Redis counters agreed, and cleanup left no
   labeled container or network.
 
+## Initial feature CI evidence
+
+GitHub Actions run `34986408682` passed all six jobs for exact pre-evidence SHA
+`45e20fff23a1daac8fd4b4f812371425c78bbfec`: `verify`, `container-image`,
+`postgres-recovery`, `minio-recovery`, `performance-baseline`, and the new
+`performance-diagnostics` job.
+
+The run retained four non-empty, commit-bound artifacts:
+
+- application SBOM: artifact `10404430027`, `75,091` bytes;
+- image security evidence: artifact `10404195956`, `67,772` bytes;
+- catalog performance summary: artifact `10403782643`, `469` bytes;
+- correlated catalog resource summaries: artifact `10402834491`, `1,144` bytes.
+
+This is initial feature evidence only. The documentation commit that records it
+must itself pass the same six-job workflow before the branch is eligible to merge.
+
 ## Commits before full delivery gates
 
 - `58cdf03` — close Phase 8.4a evidence and define the Phase 8.4b1 ADR/checklist.
@@ -142,6 +159,8 @@ not justify lowering/raising any limit or predicting production capacity.
 - `4cd30f3` — bind resource evidence to image identity and reduce token lifetime.
 - `18647e7` — prevent stale resource evidence in default mode.
 - `4efaef4` — add the operations runbook and close local documentation items.
+- `d186002` — record final local behavior and diagnostics evidence.
+- `45e20ff` — record the full pre-push quality gates.
 
 ## Delivery status
 

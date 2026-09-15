@@ -122,9 +122,17 @@ to production traffic, instance sizing, geographic latency, or availability.
 
 ## Delivery status
 
-Local pre-push gates are complete. Exact feature CI, final evidence commit, exact
-feature CI for that evidence SHA, no-fast-forward merge, repeated merge gates, and
-exact main CI remain pending and must be recorded before Phase 8.4a is complete.
+Initial feature CI run `34948474138` passed `verify`, `container-image`,
+`postgres-recovery`, `minio-recovery`, and `performance-baseline` for exact
+implementation/report commit
+`c7da9f930bbbc4deac1e6f3e1999faaf5a0f1cb2`. Its non-empty compact performance
+artifact is `catalog-performance-c7da9f930bbbc4deac1e6f3e1999faaf5a0f1cb2`
+(artifact `10388307349`, 471 bytes); application-SBOM and image-security artifacts
+were also retained for the same SHA.
+
+Local pre-push gates and initial feature CI are complete. Exact feature CI for the
+final evidence commit, no-fast-forward merge, repeated merge gates, and exact main
+CI remain pending and must be recorded before Phase 8.4a is complete.
 
 Phase 8.4b remains the next engineering slice for resource diagnosis and broader
 subsystem-specific profiles. Phase 8.4c remains blocked on real topology, traffic,

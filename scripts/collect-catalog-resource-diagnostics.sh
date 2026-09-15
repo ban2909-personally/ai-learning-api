@@ -19,6 +19,7 @@ redis_container="$(required_value DIAGNOSTICS_REDIS_CONTAINER)"
 database_name="$(required_value DIAGNOSTICS_DATABASE_NAME)"
 database_user="$(required_value DIAGNOSTICS_DATABASE_USER)"
 bearer_token="$(required_value DIAGNOSTICS_BEARER_TOKEN)"
+application_image_id="$(required_value DIAGNOSTICS_APP_IMAGE_ID)"
 stop_file="$(required_value DIAGNOSTICS_STOP_FILE)"
 samples_file="$(required_value DIAGNOSTICS_SAMPLES_FILE)"
 output_file="$(required_value DIAGNOSTICS_OUTPUT_FILE)"
@@ -88,6 +89,8 @@ for command_name in awk curl date docker sed; do
     || fail "required command $command_name is unavailable"
 done
 [[ -n "${REDISCLI_AUTH:-}" ]] || fail 'REDISCLI_AUTH is missing'
+[[ "$application_image_id" =~ ^sha256:[0-9a-f]{64}$ ]] \
+  || fail 'DIAGNOSTICS_APP_IMAGE_ID must be a Docker sha256 content identifier'
 [[ ! -e "$stop_file" ]] || fail 'stop file already exists before sampling'
 umask 077
 printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\n' \
@@ -183,6 +186,7 @@ generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 printf '{\n' >"$output_file"
 printf '  "format": "ai-learning-catalog-resource-v1",\n' >>"$output_file"
 printf '  "generatedAtUtc": "%s",\n' "$generated_at" >>"$output_file"
+printf '  "applicationImageId": "%s",\n' "$application_image_id" >>"$output_file"
 printf '  "workload": {"datasetPublishedCourses": 5000, "ratePerSecond": 25, "durationSeconds": 30},\n' >>"$output_file"
 printf '  "samples": {"count": %s, "minimumRequired": 10, "observedSpanSeconds": %s},\n' \
   "$sample_count" "$observed_span" >>"$output_file"

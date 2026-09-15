@@ -42,7 +42,8 @@ resource thresholds.
   PostgreSQL database sessions/transactions/block reads/cache hits/temp
   files/bytes/deadlocks, and Redis keyspace hits/misses/evictions/peak memory.
 - Write `target/performance/catalog-resource-summary.json` with a versioned format,
-  correlated workload identity, sample count, and numeric observations. Retain it
+  production-image content identifier, correlated workload identity, sample count,
+  and numeric observations. Retain it
   with the corresponding k6 summary, never raw bearer tokens, passwords, response
   bodies, database contents, or unbounded logs.
 - Fail closed when metrics are unauthorized, missing, non-numeric, internally

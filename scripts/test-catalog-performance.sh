@@ -74,7 +74,7 @@ cleanup() {
   unset DIAGNOSTICS_APP_PORT DIAGNOSTICS_APP_CONTAINER
   unset DIAGNOSTICS_POSTGRES_CONTAINER DIAGNOSTICS_REDIS_CONTAINER
   unset DIAGNOSTICS_DATABASE_NAME DIAGNOSTICS_DATABASE_USER
-  unset DIAGNOSTICS_BEARER_TOKEN DIAGNOSTICS_STOP_FILE
+  unset DIAGNOSTICS_BEARER_TOKEN DIAGNOSTICS_APP_IMAGE_ID DIAGNOSTICS_STOP_FILE
   unset DIAGNOSTICS_SAMPLES_FILE DIAGNOSTICS_OUTPUT_FILE
   [[ -z "$diagnostics_stop_file" ]] || rm -f -- "$diagnostics_stop_file"
   [[ -z "$diagnostics_samples_file" ]] || rm -f -- "$diagnostics_samples_file"
@@ -286,11 +286,13 @@ if [[ "$capture_resources" == 'true' ]]; then
   export DIAGNOSTICS_DATABASE_NAME="$database_name"
   export DIAGNOSTICS_DATABASE_USER="$database_user"
   export DIAGNOSTICS_BEARER_TOKEN="$diagnostics_token"
+  export DIAGNOSTICS_APP_IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$app_image")"
   export DIAGNOSTICS_STOP_FILE="$diagnostics_stop_file"
   export DIAGNOSTICS_SAMPLES_FILE="$diagnostics_samples_file"
   export DIAGNOSTICS_OUTPUT_FILE="$results_directory/catalog-resource-summary.json"
   "$script_directory/collect-catalog-resource-diagnostics.sh" &
   collector_pid="$!"
+  unset diagnostics_token DIAGNOSTICS_BEARER_TOKEN
   sleep 2
   kill -0 "$collector_pid" >/dev/null 2>&1 \
     || fail 'catalog resource collector exited before the workload started'

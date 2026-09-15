@@ -21,13 +21,14 @@ exact SHA after all local merge gates passed.
   bounds, and security exposure before choosing a workload.
 - [x] Record workload, dataset, thresholds, evidence limits, and container controls
   before implementation.
-- [ ] Add deterministic representative seed data outside application migrations.
-- [ ] Add a mixed k6 workload and fail-closed Docker orchestration script.
-- [ ] Validate response correctness, achieved iterations, errors, latency quantiles,
+- [x] Add deterministic representative seed data outside application migrations.
+- [x] Add a mixed k6 workload and fail-closed Docker orchestration script.
+- [x] Validate response correctness, achieved iterations, errors, latency quantiles,
   resource cleanup, and summary content locally.
-- [ ] Add an independent CI job after correctness and production-image gates.
-- [ ] Document operation, interpretation, tuning discipline, security, and measured
-  local/CI results.
+- [x] Add an independent CI job after correctness and production-image gates.
+- [x] Document operation, interpretation, tuning discipline, security, and measured
+  local results.
+- [ ] Record exact feature and main CI performance results for their delivered SHAs.
 - [ ] Pass full local gates, cohesive commits, exact feature CI, no-fast-forward
   merge, repeated merge gates, exact main CI, and delivery reporting.
 

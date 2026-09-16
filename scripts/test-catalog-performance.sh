@@ -148,6 +148,8 @@ if [[ "$capture_resources" == 'true' ]]; then
   done
   [[ -x "$script_directory/collect-catalog-resource-diagnostics.sh" ]] \
     || fail 'catalog resource collector is missing or not executable'
+  [[ -x "$script_directory/collect-resource-diagnostics.sh" ]] \
+    || fail 'shared resource collector is missing or not executable'
 fi
 
 mkdir -p "$results_directory"

@@ -44,19 +44,36 @@ exact SHA after all local merge gates passed.
   isolated loopback-bound test runtime; never alter production exposure defaults.
 - [x] Validate local diagnostic evidence, failure behavior, cleanup, default-mode
   isolation, and add an independent CI job without inventing resource limits.
-- [ ] Pass the diagnostics job and retain both compact summaries for exact feature
+- [x] Pass the diagnostics job and retain both compact summaries for exact feature
   and main delivery SHAs.
 - [x] Document the diagnosis, comparison, security, and cleanup workflow.
-- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+- [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 - [ ] Add authenticated read/write profiles only with isolated identities and safe
-  deterministic cleanup.
+  deterministic cleanup. Tracked as Phase 8.4b2 below.
 - [ ] Cover event throughput, WebSocket fan-out, AI concurrency/cost bounds, and
   media bandwidth with subsystem-specific scenarios rather than one mixed number.
 - [ ] Capture CPU, memory, JVM, connection-pool, database, and cache evidence so
   tuning changes have a diagnosed bottleneck.
 - [ ] Add controlled spike, saturation, recovery, and soak exercises outside normal
   per-push CI.
+
+### Phase 8.4b2 — Authenticated learning read/write profiles
+
+- [x] Record the profile boundaries, identity isolation, workload rates, response
+  assertions, evidence limits, and non-goals before implementation.
+- [ ] Add a deterministic free-course/lesson fixture outside Flyway and validate it
+  before traffic begins.
+- [ ] Register and enroll isolated identities through the existing HTTP contracts;
+  keep generated credentials and JWTs out of commands, logs, files, and artifacts.
+- [ ] Add separate authenticated read and progress-write k6 profiles with exact
+  correctness, achieved-work, failure, dropped-work, and latency gates.
+- [ ] Capture compact production-image-bound application/JVM/Hikari, PostgreSQL,
+  Redis, and container evidence for each profile without speculative resource limits.
+- [ ] Add fail-closed orchestration, exact cleanup checks, CI isolation, artifact
+  retention, and an operations runbook.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
 
 ### Phase 8.4c — Production SLO and capacity policy
 
@@ -92,3 +109,17 @@ regression baseline, and Phase 8.4b1 adds diagnosis rather than production limit
   production-image runtime, SBOM, vulnerability, secret, cleanup, and diff gates.
 - Main CI run `34980286932` passed all five jobs for that exact merge SHA. Its
   compact performance artifact `10401696271` is non-empty at 471 bytes.
+
+## Phase 8.4b1 delivery evidence
+
+- Final feature CI run `34987304035` passed all six jobs for exact evidence SHA
+  `f785cb1a60d21599303ee37678a2172a81ac6a0f`. Its four non-empty artifacts include
+  catalog resource artifact `10403737916` at 1,157 bytes.
+- No-fast-forward merge `09d01b0b3b693e332dcf7f1dc2e3ddc4508e0b04`
+  passed repeated local Maven (`199` tests), production-image runtime/security,
+  PostgreSQL/MinIO recovery, default baseline, diagnostics, evidence-integrity,
+  cleanup, and working-tree gates.
+- Main CI run `34989730512` passed all six jobs for that exact merge SHA. Its
+  non-empty application SBOM, image security, catalog performance, and catalog
+  resource artifacts are `10404603354`, `10405281440`, `10405845460`, and
+  `10405885413`, respectively.

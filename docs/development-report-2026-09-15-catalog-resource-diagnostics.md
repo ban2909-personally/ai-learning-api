@@ -164,8 +164,13 @@ must itself pass the same six-job workflow before the branch is eligible to merg
 
 ## Delivery status
 
-Functional, security, full Maven, recovery, production-image, and performance gates
-are locally proven. Exact feature CI, its final evidence commit, no-fast-forward
-merge, repeated merge gates, and exact main CI remain pending. Phase 8.4b1 is not
-complete until those gates and the non-empty CI artifacts pass for the delivered
-SHAs.
+Phase 8.4b1 is delivered. Final feature CI run `34987304035` passed all six jobs for
+exact SHA `f785cb1a60d21599303ee37678a2172a81ac6a0f`. No-fast-forward merge
+`09d01b0b3b693e332dcf7f1dc2e3ddc4508e0b04` passed the full repeated local gates,
+and main CI run `34989730512` passed all six jobs for that exact merge SHA.
+
+The main run retained four non-empty artifacts: application SBOM `10404603354`
+(`75,092` bytes), image security `10405281440` (`67,762` bytes), catalog performance
+`10405845460` (`463` bytes), and catalog resource diagnostics `10405885413` (`1,154`
+bytes). Local and remote `main` both resolved to the merge SHA with a clean working
+tree after delivery.

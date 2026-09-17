@@ -25,8 +25,8 @@ if (!BASE_URL || !BASE_URL.startsWith('http://')) {
 if (!Object.hasOwn(PROFILE_CONFIG, PROFILE)) {
     throw new Error('AUTHENTICATED_LEARNING_PROFILE must be read or write');
 }
-if (!RUN_ID || !/^[a-z0-9-]+$/.test(RUN_ID)) {
-    throw new Error('AUTHENTICATED_LEARNING_RUN_ID must contain only lowercase letters, digits, and hyphens');
+if (!RUN_ID || RUN_ID.length > 48 || !/^[a-z0-9-]+$/.test(RUN_ID)) {
+    throw new Error('AUTHENTICATED_LEARNING_RUN_ID must be at most 48 lowercase letters, digits, or hyphens');
 }
 if (!PASSWORD || PASSWORD.length < 8 || PASSWORD.length > 72) {
     throw new Error('AUTHENTICATED_LEARNING_PASSWORD must satisfy the registration contract');
@@ -85,7 +85,7 @@ export function setup() {
 
     for (let index = 1; index <= IDENTITY_COUNT; index += 1) {
         const identity = String(index).padStart(2, '0');
-        const email = `learning-${PROFILE}-${RUN_ID}-${identity}@example.invalid`;
+        const email = `learning-${RUN_ID}-${identity}@example.invalid`;
         const registration = http.post(
             `${BASE_URL}/api/v1/auth/register`,
             JSON.stringify({

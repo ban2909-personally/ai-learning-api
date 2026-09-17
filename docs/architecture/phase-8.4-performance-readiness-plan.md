@@ -49,7 +49,7 @@ exact SHA after all local merge gates passed.
 - [x] Document the diagnosis, comparison, security, and cleanup workflow.
 - [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
-- [ ] Add authenticated read/write profiles only with isolated identities and safe
+- [x] Add authenticated read/write profiles only with isolated identities and safe
   deterministic cleanup. Tracked as Phase 8.4b2 below.
 - [ ] Cover event throughput, WebSocket fan-out, AI concurrency/cost bounds, and
   media bandwidth with subsystem-specific scenarios rather than one mixed number.
@@ -62,15 +62,15 @@ exact SHA after all local merge gates passed.
 
 - [x] Record the profile boundaries, identity isolation, workload rates, response
   assertions, evidence limits, and non-goals before implementation.
-- [ ] Add a deterministic free-course/lesson fixture outside Flyway and validate it
+- [x] Add a deterministic free-course/lesson fixture outside Flyway and validate it
   before traffic begins.
-- [ ] Register and enroll isolated identities through the existing HTTP contracts;
+- [x] Register and enroll isolated identities through the existing HTTP contracts;
   keep generated credentials and JWTs out of commands, logs, files, and artifacts.
-- [ ] Add separate authenticated read and progress-write k6 profiles with exact
+- [x] Add separate authenticated read and progress-write k6 profiles with exact
   correctness, achieved-work, failure, dropped-work, and latency gates.
-- [ ] Capture compact production-image-bound application/JVM/Hikari, PostgreSQL,
+- [x] Capture compact production-image-bound application/JVM/Hikari, PostgreSQL,
   Redis, and container evidence for each profile without speculative resource limits.
-- [ ] Add fail-closed orchestration, exact cleanup checks, CI isolation, artifact
+- [x] Add fail-closed orchestration, exact cleanup checks, CI isolation, artifact
   retention, and an operations runbook.
 - [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.

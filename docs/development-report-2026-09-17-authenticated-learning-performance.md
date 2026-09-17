@@ -62,8 +62,28 @@ cache behavior, pool, thread/heap setting, or module dependency.
 
 ## Delivery status
 
-Functional profile behavior and local security/isolation controls are proven. CI
-integration and operations documentation are implemented in the current change.
-Full Maven, recovery, production-image security, exact feature CI, final evidence
-commit, no-fast-forward merge, repeated merge gates, exact main CI, and artifact
+### Full local pre-push gates
+
+- Maven `clean verify` passed all `199` tests with zero failures, errors, or skips;
+  all twelve Flyway migrations, Spring Modulith, ArchUnit, and the JaCoCo gate
+  passed. The application SBOM contains `138` components.
+- The production image contract passed with user `65532:65532`, the `prod` Spring
+  profile, and the distroless Java entrypoint. The image SBOM contains `153`
+  components; the scan recorded `60` findings and zero fixable HIGH/CRITICAL
+  findings, with secret scans clean.
+- PostgreSQL and MinIO recovery drills passed their positive restore checks and
+  every confirmation, non-empty-target, checksum, count, and content guard.
+- Catalog baseline passed `751` iterations with zero failures/drops, p95
+  `18.875 ms`, and p99 `31.342 ms`. Catalog diagnostics repeated `751` iterations
+  with zero failures/drops, p95 `18.507 ms`, p99 `31.219 ms`, and ten samples.
+- Authenticated read passed `600` iterations with zero failures/drops, p95
+  `21.521 ms`, p99 `26.661 ms`, and thirteen samples. Authenticated write passed
+  `301` iterations with zero failures/drops, p95 `40.016 ms`, p99 `58.219 ms`,
+  and thirteen samples.
+- All six compact performance files matched their expected formats and exact
+  production image. Cleanup left zero labeled performance containers or networks.
+
+Functional behavior, full local regression, security/isolation, recovery, and
+production-image gates are proven. Exact feature CI, final evidence commit,
+no-fast-forward merge, repeated merge gates, exact main CI, and remote artifact
 verification remain pending.

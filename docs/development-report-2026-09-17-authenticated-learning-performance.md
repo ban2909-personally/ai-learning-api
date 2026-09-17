@@ -83,7 +83,21 @@ cache behavior, pool, thread/heap setting, or module dependency.
 - All six compact performance files matched their expected formats and exact
   production image. Cleanup left zero labeled performance containers or networks.
 
+### Exact feature CI before the evidence commit
+
+- Exact SHA `71f636ff9489fd04e81648fb282cd58063c5e5b2` passed all seven jobs in
+  GitHub Actions run `35213903355`.
+- The run retained five non-expired artifacts bound to that SHA: application SBOM
+  `10493508006` (`75,092` bytes), image security `10494518109` (`67,755`
+  bytes), catalog performance `10493443549` (`462` bytes), catalog resource
+  `10493188520` (`1,144` bytes), and authenticated learning `10494033869`
+  (`2,346` bytes).
+- The authenticated artifact upload step passed with the four exact summary paths
+  declared in CI. GitHub's public REST API exposed its metadata but required an
+  authenticated session to download the ZIP; the same four files were individually
+  schema/image/sample validated in the full local gate above.
+
 Functional behavior, full local regression, security/isolation, recovery, and
-production-image gates are proven. Exact feature CI, final evidence commit,
-no-fast-forward merge, repeated merge gates, exact main CI, and remote artifact
-verification remain pending.
+production-image gates and the initial exact feature CI are proven. The final
+evidence-commit CI, no-fast-forward merge, repeated merge gates, exact main CI,
+and main artifact verification remain pending.

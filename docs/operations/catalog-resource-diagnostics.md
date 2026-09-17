@@ -18,7 +18,7 @@ enable resource capture:
 
 ```bash
 docker build --tag ai-learning-api:ci .
-bash -n scripts/collect-catalog-resource-diagnostics.sh scripts/test-catalog-performance.sh
+bash -n scripts/collect-resource-diagnostics.sh scripts/collect-catalog-resource-diagnostics.sh scripts/test-catalog-performance.sh
 PERFORMANCE_CAPTURE_RESOURCES=true bash scripts/test-catalog-performance.sh
 ```
 

@@ -47,6 +47,9 @@ large regressions but are deliberately not production SLOs or capacity claims.
 Opt-in JVM, pool, PostgreSQL, Redis, and container resource diagnosis is documented
 in `docs/operations/catalog-resource-diagnostics.md`; it records evidence without
 inventing production resource limits.
+Isolated JWT-protected learning read/write regression profiles are documented in
+`docs/operations/authenticated-learning-performance.md`; they use disposable
+identities and never target a shared database.
 
 ## Production image
 

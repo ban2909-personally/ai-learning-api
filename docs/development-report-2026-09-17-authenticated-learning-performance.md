@@ -98,6 +98,23 @@ cache behavior, pool, thread/heap setting, or module dependency.
   schema/image/sample validated in the full local gate above.
 
 Functional behavior, full local regression, security/isolation, recovery, and
-production-image gates and the initial exact feature CI are proven. The final
-evidence-commit CI, no-fast-forward merge, repeated merge gates, exact main CI,
-and main artifact verification remain pending.
+production-image gates and the initial exact feature CI are proven.
+
+### Final delivery
+
+- Final feature SHA `d495654e28e992c8685b891800ddadf3e1754a6b` passed all
+  seven jobs in run `35215933533`; its five artifacts are non-expired, including
+  authenticated learning artifact `10495641374` (`2,369` bytes).
+- No-fast-forward merge `4c0af0ec63434c0c5040ab78b190f1e2b3a64f91` repeated
+  the complete local gates. Catalog baseline/diagnostics passed `750` iterations
+  each with zero failures/drops and diagnostics captured ten samples. Authenticated
+  read passed `601` iterations with p95 `19.901 ms`, p99 `26.221 ms`, and fourteen
+  samples; write passed `301` iterations with p95 `36.483 ms`, p99 `49.026 ms`,
+  and thirteen samples.
+- Main run `35218974231` passed all seven jobs for the exact merge SHA. Its five
+  non-expired artifacts are application SBOM `10496272540`, image security
+  `10496532306`, catalog performance `10495878228`, catalog resource
+  `10496865265`, and authenticated learning `10496348154`.
+- Local and remote `main` both resolve to the merge SHA with a clean working tree.
+  Phase 8.4b2 is complete; production capacity/SLO claims remain explicitly out of
+  scope until the external inputs in the performance-readiness plan exist.

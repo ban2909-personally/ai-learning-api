@@ -72,7 +72,7 @@ exact SHA after all local merge gates passed.
   Redis, and container evidence for each profile without speculative resource limits.
 - [x] Add fail-closed orchestration, exact cleanup checks, CI isolation, artifact
   retention, and an operations runbook.
-- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+- [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
 ### Phase 8.4c — Production SLO and capacity policy
@@ -123,3 +123,17 @@ regression baseline, and Phase 8.4b1 adds diagnosis rather than production limit
   non-empty application SBOM, image security, catalog performance, and catalog
   resource artifacts are `10404603354`, `10405281440`, `10405845460`, and
   `10405885413`, respectively.
+
+## Phase 8.4b2 delivery evidence
+
+- Final feature CI run `35215933533` passed all seven jobs for exact evidence SHA
+  `d495654e28e992c8685b891800ddadf3e1754a6b`. Its five non-expired artifacts
+  include authenticated learning artifact `10495641374` at 2,369 bytes.
+- No-fast-forward merge `4c0af0ec63434c0c5040ab78b190f1e2b3a64f91`
+  passed repeated local Maven (`199` tests), production-image runtime/security,
+  PostgreSQL/MinIO recovery, catalog baseline/diagnostics, authenticated read/write,
+  evidence-integrity, cleanup, and working-tree gates.
+- Main CI run `35218974231` passed all seven jobs for that exact merge SHA. Its
+  non-expired application SBOM, image security, catalog performance, catalog
+  resource, and authenticated learning artifacts are `10496272540`, `10496532306`,
+  `10495878228`, `10496865265`, and `10496348154`, respectively.

@@ -80,18 +80,18 @@ exact SHA after all local merge gates passed.
 - [x] Record the production-image boundary, unique completion workload, regression
   budgets, drain semantics, exact invariants, evidence limits, and non-goals before
   implementation.
-- [ ] Add a deterministic free-course/eight-lesson fixture outside Flyway and
+- [x] Add a deterministic free-course/eight-lesson fixture outside Flyway and
   validate it before traffic.
-- [ ] Start an internal-only disposable Kafka broker with explicit source and DLT
+- [x] Start an internal-only disposable Kafka broker with explicit source and DLT
   topics; enable the existing outbox, analytics, and notification adapters only for
   the isolated profile.
-- [ ] Drive unique authenticated completion transitions at a fixed arrival rate and
+- [x] Drive unique authenticated completion transitions at a fixed arrival rate and
   gate correctness, achieved work, failures, dropped work, and HTTP latency.
-- [ ] Prove bounded end-to-end drain with exact outbox/progress/projection/event-id
+- [x] Prove bounded end-to-end drain with exact outbox/progress/projection/event-id
   counts, source offsets, zero consumer lag, zero DLT records, and zero retries.
-- [ ] Extend the shared collector with application/JVM/Hikari, PostgreSQL, Redis,
+- [x] Extend the shared collector with application/JVM/Hikari, PostgreSQL, Redis,
   Kafka, backlog, and final pipeline-counter evidence without speculative limits.
-- [ ] Add fail-closed cleanup, compact artifact schemas, CI isolation/retention, and
+- [x] Add fail-closed cleanup, compact artifact schemas, CI isolation/retention, and
   an operations runbook.
 - [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.

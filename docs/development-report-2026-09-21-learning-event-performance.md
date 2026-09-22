@@ -116,13 +116,27 @@ One independent dependency-management patch upgrades transitive Bouncy Castle fr
   catalog performance `10700223753` (467 bytes), catalog resource `10699874044`
   (1,155 bytes), authenticated learning `10700288689` (2,348 bytes), and learning
   event `10701071343` (1,829 bytes).
+- Final feature evidence SHA `23c2424f7eabbe9ef8af7a21245d0336ae441fa8`
+  passed all eight jobs in run `35743955023`. Its six artifacts were non-empty and
+  unexpired, including learning-event artifact `10703056184` (1,823 bytes).
+
+## Main delivery evidence
+
+- No-fast-forward merge `7d715dc590e9524e3d5fa8f89ef3d09062fd87bc`
+  passed the repeated local Maven suite (`199` tests), production-image runtime and
+  security gates, both recovery drills, catalog baseline/diagnostics, authenticated
+  read/write, learning-event throughput, evidence-integrity, cleanup, and Git gates.
+- Main CI run `35747575950` passed all eight jobs for that exact merge SHA. Its six
+  non-empty, unexpired artifacts are application SBOM `10703532097` (75,091 bytes),
+  image security `10704066953` (69,441 bytes), catalog performance `10703967438`
+  (469 bytes), catalog resource `10703312879` (1,156 bytes), authenticated learning
+  `10703542902` (2,358 bytes), and learning event `10704047578` (1,827 bytes).
 
 ## Delivery status
 
-Implementation, subsystem regression evidence, and the feature candidate CI are
-complete. The remaining gate is CI for this evidence-only commit, no-fast-forward
-merge, repeated local merge suite, and exact main CI. The performance-readiness plan
-must be closed with immutable merge/run/artifact evidence after those gates pass.
+Phase 8.4b3 is delivered and verified on `main`. WebSocket fan-out, AI-provider
+concurrency/cost bounds, media bandwidth, spike/saturation/recovery/soak exercises,
+and production SLO/capacity policy remain separate controlled slices.
 
 No production capacity or SLO conclusion is made. Phase 8.4c remains dependent on
 business-approved traffic forecasts, deployment topology, instance sizing,

@@ -96,6 +96,27 @@ exact SHA after all local merge gates passed.
 - [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
+### Phase 8.4b4 — Authenticated notification WebSocket fan-out
+
+- [x] Record the single-instance topology, authenticated fan-out workload,
+  regression budgets, durable catch-up boundary, evidence limits, and non-goals
+  before implementation.
+- [ ] Add low-cardinality active-session observability to the existing WebSocket
+  registry with focused lifecycle tests and no new business abstraction.
+- [ ] Add a deterministic free-course/lesson fixture outside Flyway and an isolated
+  k6 STOMP workload for forty identities with two sessions per identity.
+- [ ] Exercise unique completions only after the connection window and gate exact
+  upgrade, CONNECT, subscription, completion, per-session delivery, duplicate,
+  payload, disconnect, timeout, and end-to-end latency evidence.
+- [ ] Prove exact progress/outbox/notification/event-id counts, source offset, zero
+  consumer lag, zero retries/failure codes, and zero notification DLT records.
+- [ ] Correlate application/JVM/Hikari, PostgreSQL, Redis, Kafka, active-session,
+  processing, delivery, and container evidence with the exact production image.
+- [ ] Add fail-closed orchestration, exact cleanup, compact artifact schemas, CI
+  isolation/retention, and an operations runbook.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
+
 ### Phase 8.4c — Production SLO and capacity policy
 
 - [ ] Obtain business-approved SLIs/SLOs, traffic forecasts, peak concurrency,

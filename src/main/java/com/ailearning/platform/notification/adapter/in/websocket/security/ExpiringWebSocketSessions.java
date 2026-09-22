@@ -1,5 +1,7 @@
 package com.ailearning.platform.notification.adapter.in.websocket.security;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
@@ -17,6 +19,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExpiringWebSocketSessions {
+    static final String ACTIVE_SESSION_METRIC = "notifications.websocket.sessions.active";
     private static final Logger log = LoggerFactory.getLogger(ExpiringWebSocketSessions.class);
     private static final CloseStatus AUTHENTICATION_EXPIRED =
             CloseStatus.POLICY_VIOLATION.withReason("Authentication expired");
@@ -24,8 +27,11 @@ public class ExpiringWebSocketSessions {
     private final TaskScheduler scheduler;
     private final ConcurrentMap<String, SessionLease> sessions = new ConcurrentHashMap<>();
 
-    public ExpiringWebSocketSessions(TaskScheduler scheduler) {
+    public ExpiringWebSocketSessions(TaskScheduler scheduler, MeterRegistry registry) {
         this.scheduler = scheduler;
+        Gauge.builder(ACTIVE_SESSION_METRIC, sessions, ConcurrentMap::size)
+                .description("Current registered notification WebSocket sessions")
+                .register(registry);
     }
 
     public WebSocketHandlerDecoratorFactory decoratorFactory() {

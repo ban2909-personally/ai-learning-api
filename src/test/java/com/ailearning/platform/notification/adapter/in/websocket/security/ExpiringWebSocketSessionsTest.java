@@ -1,5 +1,6 @@
 package com.ailearning.platform.notification.adapter.in.websocket.security;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.TaskScheduler;
@@ -10,6 +11,7 @@ import org.springframework.web.socket.WebSocketSession;
 import java.time.Instant;
 import java.util.concurrent.ScheduledFuture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -20,7 +22,8 @@ import static org.mockito.Mockito.when;
 
 class ExpiringWebSocketSessionsTest {
     private final TaskScheduler scheduler = mock(TaskScheduler.class);
-    private final ExpiringWebSocketSessions sessions = new ExpiringWebSocketSessions(scheduler);
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    private final ExpiringWebSocketSessions sessions = new ExpiringWebSocketSessions(scheduler, registry);
 
     @Test
     void closesRegisteredSessionWhenAuthenticationExpires() throws Exception {
@@ -33,6 +36,7 @@ class ExpiringWebSocketSessionsTest {
         doReturn(future).when(scheduler).schedule(any(Runnable.class), any(Instant.class));
         var handler = sessions.decoratorFactory().decorate(delegate);
         handler.afterConnectionEstablished(session);
+        assertThat(activeSessions()).isEqualTo(1);
 
         sessions.expireAt("session-1", Instant.parse("2026-09-04T10:05:00Z"));
         ArgumentCaptor<Runnable> expiry = ArgumentCaptor.forClass(Runnable.class);
@@ -44,6 +48,23 @@ class ExpiringWebSocketSessionsTest {
                         && "Authentication expired".equals(status.getReason())
         ));
         verify(future).cancel(false);
+        assertThat(activeSessions()).isZero();
+    }
+
+    @Test
+    void tracksNormalSessionLifecycle() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        WebSocketHandler delegate = mock(WebSocketHandler.class);
+        when(session.getId()).thenReturn("session-2");
+        var handler = sessions.decoratorFactory().decorate(delegate);
+
+        handler.afterConnectionEstablished(session);
+
+        assertThat(activeSessions()).isEqualTo(1);
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        assertThat(activeSessions()).isZero();
     }
 
     @Test
@@ -52,5 +73,9 @@ class ExpiringWebSocketSessionsTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not registered");
         verify(scheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    private int activeSessions() {
+        return (int) registry.get(ExpiringWebSocketSessions.ACTIVE_SESSION_METRIC).gauge().value();
     }
 }

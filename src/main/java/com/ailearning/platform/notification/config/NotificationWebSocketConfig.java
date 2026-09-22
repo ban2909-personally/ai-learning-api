@@ -45,12 +45,13 @@ public class NotificationWebSocketConfig implements WebSocketMessageBrokerConfig
             @Qualifier("notificationWebSocketTaskScheduler") ThreadPoolTaskScheduler scheduler,
             JwtDecoder jwtDecoder,
             JwtAuthenticationConverter authenticationConverter,
+            MeterRegistry registry,
             Clock clock
     ) {
         this.properties = properties;
         this.cors = cors;
         this.scheduler = scheduler;
-        this.sessions = new ExpiringWebSocketSessions(scheduler);
+        this.sessions = new ExpiringWebSocketSessions(scheduler, registry);
         this.authentication = new StompJwtAuthenticationInterceptor(
                 jwtDecoder,
                 authenticationConverter,

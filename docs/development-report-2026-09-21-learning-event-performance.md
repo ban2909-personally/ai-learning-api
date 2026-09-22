@@ -105,12 +105,24 @@ One independent dependency-management patch upgrades transitive Bouncy Castle fr
 - `274c6bd` — select Bouncy Castle 1.85 after the live vulnerability gate rejected
   the vulnerable transitive release.
 
+## Feature CI evidence
+
+- Feature candidate `ad7befd4acdc3793b99e79ccac17c6dbae2f042f` passed all eight
+  jobs in CI run `35742728772`: Maven verification, production image/security,
+  PostgreSQL recovery, MinIO recovery, catalog baseline, catalog diagnostics,
+  authenticated learning, and learning-event throughput.
+- All six retained artifacts are non-empty and unexpired: application SBOM
+  `10699768706` (75,092 bytes), image security `10699903807` (69,434 bytes),
+  catalog performance `10700223753` (467 bytes), catalog resource `10699874044`
+  (1,155 bytes), authenticated learning `10700288689` (2,348 bytes), and learning
+  event `10701071343` (1,829 bytes).
+
 ## Delivery status
 
-Implementation and subsystem regression evidence are complete. The remaining gate
-is the standard full local suite, exact feature CI, no-fast-forward merge, repeated
-local merge suite, and exact main CI. This report and the performance-readiness plan
-must be updated with immutable SHAs, run IDs, and artifact IDs after those gates pass.
+Implementation, subsystem regression evidence, and the feature candidate CI are
+complete. The remaining gate is CI for this evidence-only commit, no-fast-forward
+merge, repeated local merge suite, and exact main CI. The performance-readiness plan
+must be closed with immutable merge/run/artifact evidence after those gates pass.
 
 No production capacity or SLO conclusion is made. Phase 8.4c remains dependent on
 business-approved traffic forecasts, deployment topology, instance sizing,

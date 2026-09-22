@@ -91,4 +91,3 @@ The repository gains an end-to-end regression signal for the current durable eve
 architecture and correlated evidence for later diagnosis. CI becomes longer and
 requires one additional isolated Kafka broker, but no production dependency, API,
 event contract, database behavior, or module boundary changes.
-

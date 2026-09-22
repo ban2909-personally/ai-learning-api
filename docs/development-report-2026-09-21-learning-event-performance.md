@@ -9,8 +9,11 @@ Branch: `feature/learning-event-performance`
 Phase 8.4b3 now has a production-image-bound regression profile for the durable
 lesson-completion pipeline: authenticated HTTP completion, transactional outbox,
 Kafka dispatch, analytics projection, and durable notification projection. The
-implementation changes no Java production source, dependency, API/event contract,
-authorization rule, Flyway migration, index, cache, pool, thread, or runtime tuning.
+workload implementation changes no Java production source, dependency, API/event
+contract, authorization rule, Flyway migration, index, cache, pool, thread, or
+runtime tuning.
+One independent dependency-management patch upgrades transitive Bouncy Castle from
+`1.84` to `1.85` after the current vulnerability database rejected the former.
 
 ## Architecture and maintainability
 
@@ -42,23 +45,43 @@ authorization rule, Flyway migration, index, cache, pool, thread, or runtime tun
 ## Local implementation evidence
 
 - Final learning-event run achieved `241` iterations with checks `1.0`, request
-  failures/drops `0`, p95 `30.727 ms`, and p99 `46.583 ms`.
+  failures/drops `0`, p95 `28.817 ms`, and p99 `35.812 ms`.
 - Database and broker evidence matched exactly: `241` completed progress rows,
   outbox rows, published rows, source offsets, analytics facts, and notifications.
-  Drain completed in one second; pending rows, attempts, locks, failure codes,
-  event-ID mismatches, consumer lag, and DLT offsets were all zero.
+  Drain was already complete at the first bounded probe; pending rows, attempts,
+  locks, failure codes, event-ID mismatches, consumer lag, and DLT offsets were all
+  zero.
 - Final application counters were `241` published, `241` analytics projected, and
   `241` notifications projected. Failure, duplicate, rejection, and DLT counters
-  were zero. Resource evidence captured seventeen samples across a 64-second span.
-- Catalog resource regression passed `750` iterations with zero failures/drops,
-  p95 `17.304 ms`, p99 `25.693 ms`, ten samples, and the unchanged catalog format.
-- Authenticated read passed `601` iterations with p95 `18.764 ms`, p99 `24.363 ms`,
-  and thirteen samples. Write passed `301` iterations with p95 `27.315 ms`, p99
-  `42.342 ms`, and fourteen samples. Both had zero failures/drops and unchanged
+  were zero. Resource evidence captured eighteen samples across a 70-second span.
+- Catalog default mode and resource mode both passed `751` iterations with zero
+  failures/drops. The retained resource run recorded p95 `18.819 ms`, p99
+  `49.400 ms`, ten samples, and the unchanged catalog format.
+- Authenticated read passed `600` iterations with p95 `33.627 ms`, p99 `51.805 ms`,
+  and twelve samples. Write passed `300` iterations with p95 `28.898 ms`, p99
+  `36.523 ms`, and thirteen samples. Both had zero failures/drops and unchanged
   authenticated resource formats.
 - All successful profiles referenced production image
-  `sha256:124aa7cdf9266137da5c147739e6d7bc48da66c55dbfbb36f5a6f841b4df313a`
+  `sha256:6c0bb3a222a5fff6b0fa5a6a14c24dfa0e1258250a9ef3c86adbf29294f79a09`
   and left no labeled performance container or network.
+
+## Full local pre-delivery gates
+
+- `mvn clean verify` passed all `199` tests with no failures, errors, or skips;
+  all twelve Flyway migrations, Modulith boundaries, ArchUnit rules, and JaCoCo
+  checks passed. The CycloneDX 1.6 application SBOM contains 138 components.
+- The rebuilt production image runs as `65532:65532`, activates the `prod` profile,
+  and has the fixed `/usr/bin/java -jar /app/app.jar` entrypoint. Its CycloneDX 1.7
+  SBOM contains 153 components.
+- The first current-database Trivy scan rejected transitive
+  `org.bouncycastle:bcprov-jdk18on:1.84` for CVE-2026-8763 and CVE-2026-13506.
+  Dependency management now selects `1.85`; MinIO integration and the full suite
+  passed afterward. The final report has zero fixable HIGH/CRITICAL findings and
+  both source and image secret scans passed.
+- PostgreSQL recovery passed confirmation, non-empty-target, and checksum guards
+  before an exact restore. MinIO recovery passed confirmation, prefix reuse,
+  non-empty-target, inventory checksum/count, and missing/extra/different-object
+  guards before exact object verification.
 
 ## Harness defects found and corrected
 
@@ -78,6 +101,9 @@ authorization rule, Flyway migration, index, cache, pool, thread, or runtime tun
 - `e0d1105` — add the deterministic fixture and unique completion workload.
 - `6784897` — add the shared diagnostics extension and fail-closed event harness.
 - `e2bc524` — add the independent CI gate and three-artifact retention contract.
+- `865d874` — add the operational runbook and troubleshooting workflow.
+- `274c6bd` — select Bouncy Castle 1.85 after the live vulnerability gate rejected
+  the vulnerable transitive release.
 
 ## Delivery status
 

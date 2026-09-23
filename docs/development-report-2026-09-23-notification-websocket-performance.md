@@ -120,25 +120,51 @@ metrics return 401 and a disallowed WebSocket origin returns 403.
 - e2669c2 — replace resettable module-test clocks with a fixed test clock.
 - a4aaa8d — make the shared minimum-sample contract deterministic.
 - 5292658 — record complete local implementation and gate evidence.
+- 7675ff8 — record final feature CI evidence.
 
-## Feature CI evidence
+## Final feature CI evidence
 
-- Feature candidate 52926586cfc4f801810f370828f4b77025e017dd passed all nine
-  jobs in CI run 35828676925: Maven verification, production image/security,
+- Final feature SHA 7675ff8c4d8812dd0791e03fa475663acae2d080 passed all nine
+  jobs in CI run 35829387545: Maven verification, production image/security,
   PostgreSQL recovery, MinIO recovery, catalog baseline, catalog diagnostics,
   authenticated learning, learning-event throughput, and notification WebSocket
   fan-out.
 - All seven retained artifacts are non-empty and unexpired: application SBOM
-  10736667187 (75,092 bytes), image security 10736935316 (71,274 bytes), catalog
-  performance 10736547718 (465 bytes), catalog resource 10736707687 (1,149 bytes),
-  authenticated learning 10736262193 (2,348 bytes), learning event 10736028419
-  (1,830 bytes), and notification WebSocket 10736177703 (2,042 bytes).
+  10736543723 (75,092 bytes), image security 10736781571 (71,283 bytes), catalog
+  performance 10736437132 (463 bytes), catalog resource 10736932076 (1,146 bytes),
+  authenticated learning 10735824584 (2,351 bytes), learning event 10735964455
+  (1,830 bytes), and notification WebSocket 10736604301 (2,041 bytes).
+
+## Merge and main delivery evidence
+
+- No-fast-forward merge 5b70957f024f12abc849481e1345158f13cf2492 repeated the
+  full local gate suite on the exact merge result. Maven passed 201 tests with all
+  twelve Flyway migrations, Modulith and ArchUnit rules, JaCoCo, and the application
+  SBOM. The production image was
+  sha256:19edb29953c0f8469ed51081fe82a4fe550c44b0760c8038778d2ee4b3a38ffc.
+- The merge image security gate retained 67 known findings, including seven
+  currently unfixed HIGH findings, with zero fixable HIGH/CRITICAL findings and no
+  source or image secrets. PostgreSQL recovery passed in 20 seconds and MinIO
+  recovery passed in 40 seconds.
+- Merge performance gates passed with zero request failures or dropped iterations:
+  catalog baseline 750 iterations at p95 25.907 ms; catalog diagnostics 751 at p95
+  44.659 ms with ten samples; authenticated read 600 at p95 24.699 ms and write 301
+  at p95 28.725 ms, each with fourteen samples; learning event 241 at p95 38.632 ms
+  with eighteen samples and exact DB/outbox/Kafka reconciliation; notification
+  WebSocket 80 connected/subscribed sessions, 40 completions, exactly 80 valid
+  messages, p95 963.3 ms, and twelve samples.
+- Main CI run 35869448624 passed all nine jobs for the exact merge SHA. Its seven
+  non-empty, unexpired artifacts are application SBOM 10754547153 (75,092 bytes),
+  image security 10754417757 (71,488 bytes), catalog performance 10754905703
+  (463 bytes), catalog resource 10755075649 (1,152 bytes), authenticated learning
+  10754651034 (2,353 bytes), learning event 10754083616 (1,825 bytes), and
+  notification WebSocket 10754123610 (2,038 bytes).
 
 ## Delivery status
 
-All implementation, local pre-push gates, and the initial exact feature CI are
-complete. The final evidence commit, no-fast-forward merge verification, and exact
-main CI evidence remain to be recorded before Phase 8.4b4 is closed.
+Phase 8.4b4 is complete. Implementation, local pre-push gates, final exact feature
+CI, no-fast-forward merge verification, exact main CI, retained artifacts, and
+delivery reporting all passed without weakening the documented contracts.
 
 No production capacity or SLO conclusion is made. Phase 8.4c still depends on
 business-approved traffic forecasts, deployment topology, instance sizing,

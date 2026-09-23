@@ -114,7 +114,7 @@ exact SHA after all local merge gates passed.
   processing, delivery, and container evidence with the exact production image.
 - [x] Add fail-closed orchestration, exact cleanup, compact artifact schemas, CI
   isolation/retention, and an operations runbook.
-- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+- [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
 ### Phase 8.4c — Production SLO and capacity policy
@@ -194,3 +194,19 @@ regression baseline, and Phase 8.4b1 adds diagnosis rather than production limit
   catalog resource, authenticated learning, and learning-event artifacts are
   `10703532097`, `10704066953`, `10703967438`, `10703312879`, `10703542902`, and
   `10704047578`, respectively.
+
+## Phase 8.4b4 delivery evidence
+
+- Final feature CI run `35829387545` passed all nine jobs for exact evidence SHA
+  `7675ff8c4d8812dd0791e03fa475663acae2d080`. Its seven non-empty, unexpired
+  artifacts include notification WebSocket artifact `10736604301` at 2,041 bytes.
+- No-fast-forward merge `5b70957f024f12abc849481e1345158f13cf2492`
+  passed repeated local Maven (`201` tests), production-image runtime/security,
+  PostgreSQL/MinIO recovery, catalog baseline/diagnostics, authenticated read/write,
+  learning-event throughput, notification WebSocket fan-out, evidence-integrity,
+  cleanup, and working-tree gates.
+- Main CI run `35869448624` passed all nine jobs for that exact merge SHA. Its
+  non-empty, unexpired application SBOM, image security, catalog performance,
+  catalog resource, authenticated learning, learning-event, and notification
+  WebSocket artifacts are `10754547153`, `10754417757`, `10754905703`,
+  `10755075649`, `10754651034`, `10754083616`, and `10754123610`, respectively.

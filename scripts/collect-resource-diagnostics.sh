@@ -25,6 +25,7 @@ application_image_id="$(required_value DIAGNOSTICS_APP_IMAGE_ID)"
 stop_file="$(required_value DIAGNOSTICS_STOP_FILE)"
 samples_file="$(required_value DIAGNOSTICS_SAMPLES_FILE)"
 output_file="$(required_value DIAGNOSTICS_OUTPUT_FILE)"
+minimum_samples=10
 
 fail() {
   printf 'Resource diagnostics failed: %s\n' "$1" >&2
@@ -114,7 +115,8 @@ umask 077
 printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\tkafka_cpu\tkafka_memory\tkafka_pids\toutbox_pending\toutbox_oldest_age\tactive_websocket_sessions\n' \
   >"$samples_file"
 
-while [[ ! -e "$stop_file" ]]; do
+captured_samples=0
+while [[ ! -e "$stop_file" || "$captured_samples" -lt "$minimum_samples" ]]; do
   stats_containers=("$app_container" "$postgres_container" "$redis_container")
   [[ -z "$kafka_container" ]] || stats_containers+=("$kafka_container")
   stats_snapshot="$(docker stats --no-stream \
@@ -154,6 +156,7 @@ while [[ ! -e "$stop_file" ]]; do
     "$kafka_cpu" "$kafka_memory" "$kafka_pids" \
     "$outbox_pending" "$outbox_oldest_age" "$active_websocket_sessions" \
     >>"$samples_file"
+  captured_samples=$((captured_samples + 1))
 done
 
 read -r sample_count max_app_cpu max_app_memory max_app_pids \
@@ -180,8 +183,8 @@ read -r sample_count max_app_cpu max_app_memory max_app_pids \
       }
     ' "$samples_file"
   )"
-[[ "$sample_count" =~ ^[0-9]+$ ]] && ((sample_count >= 10)) \
-  || fail "only $sample_count resource samples were captured; at least 10 are required"
+[[ "$sample_count" =~ ^[0-9]+$ ]] && ((sample_count >= minimum_samples)) \
+  || fail "only $sample_count resource samples were captured; at least $minimum_samples are required"
 
 postgres_json="$(docker exec "$postgres_container" \
   psql --no-psqlrc --quiet --tuples-only --no-align \
@@ -264,8 +267,8 @@ printf '  "format": "%s",\n' "$summary_format" >>"$output_file"
 printf '  "generatedAtUtc": "%s",\n' "$generated_at" >>"$output_file"
 printf '  "applicationImageId": "%s",\n' "$application_image_id" >>"$output_file"
 printf '  "workload": %s,\n' "$workload_json" >>"$output_file"
-printf '  "samples": {"count": %s, "minimumRequired": 10, "observedSpanSeconds": %s},\n' \
-  "$sample_count" "$observed_span" >>"$output_file"
+printf '  "samples": {"count": %s, "minimumRequired": %s, "observedSpanSeconds": %s},\n' \
+  "$sample_count" "$minimum_samples" "$observed_span" >>"$output_file"
 printf '  "application": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids": %s, "maxJvmUsedBytes": %s, "maxHikariActive": %s, "maxHikariPending": %s%s},\n' \
   "$max_app_cpu" "$max_app_memory" "$max_app_pids" "$max_jvm_used" \
   "$max_hikari_active" "$max_hikari_pending" "$application_extension" >>"$output_file"

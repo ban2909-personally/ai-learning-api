@@ -92,8 +92,9 @@ for command_name in awk curl date docker sed; do
 done
 [[ "$workload_kind" == 'catalog' \
   || "$workload_kind" == 'authenticated-learning' \
-  || "$workload_kind" == 'learning-event' ]] \
-  || fail 'DIAGNOSTICS_WORKLOAD_KIND must be catalog, authenticated-learning, or learning-event'
+  || "$workload_kind" == 'learning-event' \
+  || "$workload_kind" == 'notification-websocket' ]] \
+  || fail 'DIAGNOSTICS_WORKLOAD_KIND must be catalog, authenticated-learning, learning-event, or notification-websocket'
 [[ -n "${REDISCLI_AUTH:-}" ]] || fail 'REDISCLI_AUTH is missing'
 [[ "$application_image_id" =~ ^sha256:[0-9a-f]{64}$ ]] \
   || fail 'DIAGNOSTICS_APP_IMAGE_ID must be a Docker sha256 content identifier'
@@ -105,12 +106,12 @@ if [[ "$workload_kind" == 'authenticated-learning' ]]; then
   [[ "$learning_profile" == 'read' || "$learning_profile" == 'write' ]] \
     || fail 'DIAGNOSTICS_LEARNING_PROFILE must be read or write'
 fi
-if [[ "$workload_kind" == 'learning-event' ]]; then
+if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
   kafka_container="$(required_value DIAGNOSTICS_KAFKA_CONTAINER)"
 fi
 
 umask 077
-printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\tkafka_cpu\tkafka_memory\tkafka_pids\toutbox_pending\toutbox_oldest_age\n' \
+printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\tkafka_cpu\tkafka_memory\tkafka_pids\toutbox_pending\toutbox_oldest_age\tactive_websocket_sessions\n' \
   >"$samples_file"
 
 while [[ ! -e "$stop_file" ]]; do
@@ -130,24 +131,28 @@ while [[ ! -e "$stop_file" ]]; do
   kafka_pids='0'
   outbox_pending='0'
   outbox_oldest_age='0'
-  if [[ "$workload_kind" == 'learning-event' ]]; then
+  active_websocket_sessions='0'
+  if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
     kafka_stats="$(container_stats_from_snapshot "$stats_snapshot" "$kafka_container")"
     IFS=$'\t' read -r kafka_cpu kafka_memory kafka_pids <<<"$kafka_stats"
     outbox_pending="$(metric_value learning.events.outbox.pending)"
     outbox_oldest_age="$(metric_value learning.events.outbox.oldest.age.seconds)"
   fi
+  if [[ "$workload_kind" == 'notification-websocket' ]]; then
+    active_websocket_sessions="$(metric_value notifications.websocket.sessions.active)"
+  fi
 
   IFS=$'\t' read -r app_cpu app_memory app_pids <<<"$app_stats"
   IFS=$'\t' read -r postgres_cpu postgres_memory _ <<<"$postgres_stats"
   IFS=$'\t' read -r redis_cpu redis_memory _ <<<"$redis_stats"
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$(date +%s)" \
     "$app_cpu" "$app_memory" "$app_pids" \
     "$postgres_cpu" "$postgres_memory" \
     "$redis_cpu" "$redis_memory" \
     "$jvm_used" "$hikari_active" "$hikari_pending" \
     "$kafka_cpu" "$kafka_memory" "$kafka_pids" \
-    "$outbox_pending" "$outbox_oldest_age" \
+    "$outbox_pending" "$outbox_oldest_age" "$active_websocket_sessions" \
     >>"$samples_file"
 done
 
@@ -155,22 +160,22 @@ read -r sample_count max_app_cpu max_app_memory max_app_pids \
   max_postgres_cpu max_postgres_memory max_redis_cpu max_redis_memory \
   max_jvm_used max_hikari_active max_hikari_pending \
   max_kafka_cpu max_kafka_memory max_kafka_pids \
-  max_outbox_pending max_outbox_oldest_age observed_span <<<"$(
+  max_outbox_pending max_outbox_oldest_age max_active_websocket_sessions observed_span <<<"$(
     awk -F '\t' '
       NR == 1 { next }
       {
         if (count == 0) first_epoch = $1
         last_epoch = $1
         count++
-        for (column = 2; column <= 16; column++) {
+        for (column = 2; column <= 17; column++) {
           if (count == 1 || $column + 0 > maximum[column]) maximum[column] = $column + 0
         }
       }
       END {
-        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %.6f %.6f %d", count,
+        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %d", count,
           maximum[2], maximum[3], maximum[4], maximum[5], maximum[6],
           maximum[7], maximum[8], maximum[9], maximum[10], maximum[11],
-          maximum[12], maximum[13], maximum[14], maximum[15], maximum[16],
+          maximum[12], maximum[13], maximum[14], maximum[15], maximum[16], maximum[17],
           last_epoch - first_epoch
       }
     ' "$samples_file"
@@ -225,7 +230,7 @@ elif [[ "$workload_kind" == 'authenticated-learning' ]]; then
   learning_rate=10
   [[ "$learning_profile" == 'write' ]] || learning_rate=20
   workload_json="{\"profile\": \"$learning_profile\", \"identities\": 40, \"ratePerSecond\": $learning_rate, \"durationSeconds\": 30, \"courseSlug\": \"authenticated-learning-performance\", \"lessons\": 4}"
-else
+elif [[ "$workload_kind" == 'learning-event' ]]; then
   dispatch_published="$(metric_value learning.events.dispatch 'outcome:published')"
   dispatch_failed="$(metric_value learning.events.dispatch 'outcome:failed')"
   analytics_projected="$(metric_value analytics.kafka.processing 'outcome:projected')"
@@ -239,6 +244,18 @@ else
   application_extension=", \"maxOutboxPending\": $max_outbox_pending, \"maxOutboxOldestAgeSeconds\": $max_outbox_oldest_age, \"dispatchPublished\": $dispatch_published, \"dispatchFailed\": $dispatch_failed, \"analyticsProjected\": $analytics_projected, \"analyticsDuplicate\": $analytics_duplicate, \"analyticsRejected\": $analytics_rejected, \"analyticsDeadLetter\": $analytics_dead_letter, \"notificationsProjected\": $notifications_projected, \"notificationsDuplicate\": $notifications_duplicate, \"notificationsRejected\": $notifications_rejected, \"notificationsDeadLetter\": $notifications_dead_letter"
   summary_format='ai-learning-event-resource-v1'
   workload_json='{"identities": 40, "ratePerSecond": 8, "durationSeconds": 30, "courseSlug": "learning-event-performance", "lessons": 8}'
+else
+  dispatch_published="$(metric_value learning.events.dispatch 'outcome:published')"
+  dispatch_failed="$(metric_value learning.events.dispatch 'outcome:failed')"
+  notifications_projected="$(metric_value notifications.kafka.processing 'outcome:projected')"
+  notifications_duplicate="$(metric_value notifications.kafka.processing 'outcome:duplicate')"
+  notifications_rejected="$(metric_value notifications.kafka.processing 'outcome:rejected')"
+  notifications_dead_letter="$(metric_value notifications.kafka.dead.letter)"
+  realtime_sent="$(metric_value notifications.realtime.delivery 'outcome:sent')"
+  realtime_failed="$(metric_value notifications.realtime.delivery 'outcome:failed')"
+  application_extension=", \"maxOutboxPending\": $max_outbox_pending, \"maxOutboxOldestAgeSeconds\": $max_outbox_oldest_age, \"maxActiveWebSocketSessions\": $max_active_websocket_sessions, \"dispatchPublished\": $dispatch_published, \"dispatchFailed\": $dispatch_failed, \"notificationsProjected\": $notifications_projected, \"notificationsDuplicate\": $notifications_duplicate, \"notificationsRejected\": $notifications_rejected, \"notificationsDeadLetter\": $notifications_dead_letter, \"realtimeSent\": $realtime_sent, \"realtimeFailed\": $realtime_failed"
+  summary_format='ai-learning-notification-websocket-resource-v1'
+  workload_json='{"identities": 40, "sessionsPerIdentity": 2, "expectedSessions": 80, "completionWorkers": 8, "expectedCompletions": 40, "connectionWindowSeconds": 10, "courseSlug": "notification-websocket-performance"}'
 fi
 
 generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -255,11 +272,12 @@ printf '  "application": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids"
 printf '  "postgres": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "database": %s},\n' \
   "$max_postgres_cpu" "$max_postgres_memory" "$postgres_json" >>"$output_file"
 redis_suffix=''
-[[ "$workload_kind" != 'learning-event' ]] || redis_suffix=','
+[[ "$workload_kind" != 'learning-event' && "$workload_kind" != 'notification-websocket' ]] \
+  || redis_suffix=','
 printf '  "redis": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "keyspaceHits": %s, "keyspaceMisses": %s, "evictedKeys": %s, "usedMemoryPeakBytes": %s}%s\n' \
   "$max_redis_cpu" "$max_redis_memory" "$redis_hits" "$redis_misses" \
   "$redis_evictions" "$redis_peak_memory" "$redis_suffix" >>"$output_file"
-if [[ "$workload_kind" == 'learning-event' ]]; then
+if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
   printf '  "kafka": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids": %s}\n' \
     "$max_kafka_cpu" "$max_kafka_memory" "$max_kafka_pids" >>"$output_file"
 fi

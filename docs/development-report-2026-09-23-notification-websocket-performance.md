@@ -119,12 +119,26 @@ metrics return 401 and a disallowed WebSocket origin returns 403.
 - e1f885a — add the independent CI job and artifact contract.
 - e2669c2 — replace resettable module-test clocks with a fixed test clock.
 - a4aaa8d — make the shared minimum-sample contract deterministic.
+- 5292658 — record complete local implementation and gate evidence.
+
+## Feature CI evidence
+
+- Feature candidate 52926586cfc4f801810f370828f4b77025e017dd passed all nine
+  jobs in CI run 35828676925: Maven verification, production image/security,
+  PostgreSQL recovery, MinIO recovery, catalog baseline, catalog diagnostics,
+  authenticated learning, learning-event throughput, and notification WebSocket
+  fan-out.
+- All seven retained artifacts are non-empty and unexpired: application SBOM
+  10736667187 (75,092 bytes), image security 10736935316 (71,274 bytes), catalog
+  performance 10736547718 (465 bytes), catalog resource 10736707687 (1,149 bytes),
+  authenticated learning 10736262193 (2,348 bytes), learning event 10736028419
+  (1,830 bytes), and notification WebSocket 10736177703 (2,042 bytes).
 
 ## Delivery status
 
-All implementation and local pre-push gates are complete. Exact feature CI,
-no-fast-forward merge verification, and exact main CI evidence remain to be
-recorded before Phase 8.4b4 is closed.
+All implementation, local pre-push gates, and the initial exact feature CI are
+complete. The final evidence commit, no-fast-forward merge verification, and exact
+main CI evidence remain to be recorded before Phase 8.4b4 is closed.
 
 No production capacity or SLO conclusion is made. Phase 8.4c still depends on
 business-approved traffic forecasts, deployment topology, instance sizing,

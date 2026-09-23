@@ -3,9 +3,11 @@ package com.ailearning.platform.notification;
 import com.ailearning.platform.notification.adapter.in.websocket.security.StompJwtAuthenticationInterceptor;
 import com.ailearning.platform.notification.application.port.out.NotificationRealtimeDelivery;
 import com.ailearning.platform.platform.security.CorsProperties;
+import com.ailearning.platform.testing.FixedClockTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Import;
 import org.springframework.messaging.support.AbstractSubscribableChannel;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.security.messaging.access.intercept.AuthorizationChannelInterceptor;
@@ -17,12 +19,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.time.Clock;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ApplicationModuleTest
+@Import(FixedClockTestConfiguration.class)
 @TestPropertySource(properties = "spring.autoconfigure.exclude="
         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
         + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
@@ -34,9 +36,6 @@ class NotificationModuleIntegrationTest {
 
     @MockitoBean
     private PlatformTransactionManager transactionManager;
-
-    @MockitoBean
-    private Clock clock;
 
     @MockitoBean
     private NotificationRealtimeDelivery realtime;

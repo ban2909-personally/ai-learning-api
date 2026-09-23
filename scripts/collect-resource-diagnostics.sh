@@ -18,6 +18,7 @@ app_container="$(required_value DIAGNOSTICS_APP_CONTAINER)"
 postgres_container="$(required_value DIAGNOSTICS_POSTGRES_CONTAINER)"
 redis_container="$(required_value DIAGNOSTICS_REDIS_CONTAINER)"
 kafka_container=''
+provider_container=''
 database_name="$(required_value DIAGNOSTICS_DATABASE_NAME)"
 database_user="$(required_value DIAGNOSTICS_DATABASE_USER)"
 bearer_token="$(required_value DIAGNOSTICS_BEARER_TOKEN)"
@@ -94,8 +95,9 @@ done
 [[ "$workload_kind" == 'catalog' \
   || "$workload_kind" == 'authenticated-learning' \
   || "$workload_kind" == 'learning-event' \
-  || "$workload_kind" == 'notification-websocket' ]] \
-  || fail 'DIAGNOSTICS_WORKLOAD_KIND must be catalog, authenticated-learning, learning-event, or notification-websocket'
+  || "$workload_kind" == 'notification-websocket' \
+  || "$workload_kind" == 'ai-mentor' ]] \
+  || fail 'DIAGNOSTICS_WORKLOAD_KIND must be catalog, authenticated-learning, learning-event, notification-websocket, or ai-mentor'
 [[ -n "${REDISCLI_AUTH:-}" ]] || fail 'REDISCLI_AUTH is missing'
 [[ "$application_image_id" =~ ^sha256:[0-9a-f]{64}$ ]] \
   || fail 'DIAGNOSTICS_APP_IMAGE_ID must be a Docker sha256 content identifier'
@@ -110,15 +112,19 @@ fi
 if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
   kafka_container="$(required_value DIAGNOSTICS_KAFKA_CONTAINER)"
 fi
+if [[ "$workload_kind" == 'ai-mentor' ]]; then
+  provider_container="$(required_value DIAGNOSTICS_PROVIDER_CONTAINER)"
+fi
 
 umask 077
-printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\tkafka_cpu\tkafka_memory\tkafka_pids\toutbox_pending\toutbox_oldest_age\tactive_websocket_sessions\n' \
+printf 'epoch\tapp_cpu\tapp_memory\tapp_pids\tpostgres_cpu\tpostgres_memory\tredis_cpu\tredis_memory\tjvm_used_bytes\thikari_active\thikari_pending\tkafka_cpu\tkafka_memory\tkafka_pids\toutbox_pending\toutbox_oldest_age\tactive_websocket_sessions\tprovider_cpu\tprovider_memory\tprovider_pids\n' \
   >"$samples_file"
 
 captured_samples=0
 while [[ ! -e "$stop_file" || "$captured_samples" -lt "$minimum_samples" ]]; do
   stats_containers=("$app_container" "$postgres_container" "$redis_container")
   [[ -z "$kafka_container" ]] || stats_containers+=("$kafka_container")
+  [[ -z "$provider_container" ]] || stats_containers+=("$provider_container")
   stats_snapshot="$(docker stats --no-stream \
     --format '{{.Name}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.PIDs}}' \
     "${stats_containers[@]}")" || fail 'Docker resource snapshot failed'
@@ -134,6 +140,9 @@ while [[ ! -e "$stop_file" || "$captured_samples" -lt "$minimum_samples" ]]; do
   outbox_pending='0'
   outbox_oldest_age='0'
   active_websocket_sessions='0'
+  provider_cpu='0'
+  provider_memory='0'
+  provider_pids='0'
   if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
     kafka_stats="$(container_stats_from_snapshot "$stats_snapshot" "$kafka_container")"
     IFS=$'\t' read -r kafka_cpu kafka_memory kafka_pids <<<"$kafka_stats"
@@ -143,11 +152,15 @@ while [[ ! -e "$stop_file" || "$captured_samples" -lt "$minimum_samples" ]]; do
   if [[ "$workload_kind" == 'notification-websocket' ]]; then
     active_websocket_sessions="$(metric_value notifications.websocket.sessions.active)"
   fi
+  if [[ "$workload_kind" == 'ai-mentor' ]]; then
+    provider_stats="$(container_stats_from_snapshot "$stats_snapshot" "$provider_container")"
+    IFS=$'\t' read -r provider_cpu provider_memory provider_pids <<<"$provider_stats"
+  fi
 
   IFS=$'\t' read -r app_cpu app_memory app_pids <<<"$app_stats"
   IFS=$'\t' read -r postgres_cpu postgres_memory _ <<<"$postgres_stats"
   IFS=$'\t' read -r redis_cpu redis_memory _ <<<"$redis_stats"
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$(date +%s)" \
     "$app_cpu" "$app_memory" "$app_pids" \
     "$postgres_cpu" "$postgres_memory" \
@@ -155,6 +168,7 @@ while [[ ! -e "$stop_file" || "$captured_samples" -lt "$minimum_samples" ]]; do
     "$jvm_used" "$hikari_active" "$hikari_pending" \
     "$kafka_cpu" "$kafka_memory" "$kafka_pids" \
     "$outbox_pending" "$outbox_oldest_age" "$active_websocket_sessions" \
+    "$provider_cpu" "$provider_memory" "$provider_pids" \
     >>"$samples_file"
   captured_samples=$((captured_samples + 1))
 done
@@ -163,22 +177,24 @@ read -r sample_count max_app_cpu max_app_memory max_app_pids \
   max_postgres_cpu max_postgres_memory max_redis_cpu max_redis_memory \
   max_jvm_used max_hikari_active max_hikari_pending \
   max_kafka_cpu max_kafka_memory max_kafka_pids \
-  max_outbox_pending max_outbox_oldest_age max_active_websocket_sessions observed_span <<<"$(
+  max_outbox_pending max_outbox_oldest_age max_active_websocket_sessions \
+  max_provider_cpu max_provider_memory max_provider_pids observed_span <<<"$(
     awk -F '\t' '
       NR == 1 { next }
       {
         if (count == 0) first_epoch = $1
         last_epoch = $1
         count++
-        for (column = 2; column <= 17; column++) {
+        for (column = 2; column <= 20; column++) {
           if (count == 1 || $column + 0 > maximum[column]) maximum[column] = $column + 0
         }
       }
       END {
-        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %d", count,
+        printf "%d %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %d %d", count,
           maximum[2], maximum[3], maximum[4], maximum[5], maximum[6],
           maximum[7], maximum[8], maximum[9], maximum[10], maximum[11],
           maximum[12], maximum[13], maximum[14], maximum[15], maximum[16], maximum[17],
+          maximum[18], maximum[19], maximum[20],
           last_epoch - first_epoch
       }
     ' "$samples_file"
@@ -247,7 +263,7 @@ elif [[ "$workload_kind" == 'learning-event' ]]; then
   application_extension=", \"maxOutboxPending\": $max_outbox_pending, \"maxOutboxOldestAgeSeconds\": $max_outbox_oldest_age, \"dispatchPublished\": $dispatch_published, \"dispatchFailed\": $dispatch_failed, \"analyticsProjected\": $analytics_projected, \"analyticsDuplicate\": $analytics_duplicate, \"analyticsRejected\": $analytics_rejected, \"analyticsDeadLetter\": $analytics_dead_letter, \"notificationsProjected\": $notifications_projected, \"notificationsDuplicate\": $notifications_duplicate, \"notificationsRejected\": $notifications_rejected, \"notificationsDeadLetter\": $notifications_dead_letter"
   summary_format='ai-learning-event-resource-v1'
   workload_json='{"identities": 40, "ratePerSecond": 8, "durationSeconds": 30, "courseSlug": "learning-event-performance", "lessons": 8}'
-else
+elif [[ "$workload_kind" == 'notification-websocket' ]]; then
   dispatch_published="$(metric_value learning.events.dispatch 'outcome:published')"
   dispatch_failed="$(metric_value learning.events.dispatch 'outcome:failed')"
   notifications_projected="$(metric_value notifications.kafka.processing 'outcome:projected')"
@@ -259,6 +275,17 @@ else
   application_extension=", \"maxOutboxPending\": $max_outbox_pending, \"maxOutboxOldestAgeSeconds\": $max_outbox_oldest_age, \"maxActiveWebSocketSessions\": $max_active_websocket_sessions, \"dispatchPublished\": $dispatch_published, \"dispatchFailed\": $dispatch_failed, \"notificationsProjected\": $notifications_projected, \"notificationsDuplicate\": $notifications_duplicate, \"notificationsRejected\": $notifications_rejected, \"notificationsDeadLetter\": $notifications_dead_letter, \"realtimeSent\": $realtime_sent, \"realtimeFailed\": $realtime_failed"
   summary_format='ai-learning-notification-websocket-resource-v1'
   workload_json='{"identities": 40, "sessionsPerIdentity": 2, "expectedSessions": 80, "completionWorkers": 8, "expectedCompletions": 40, "connectionWindowSeconds": 10, "courseSlug": "notification-websocket-performance"}'
+else
+  mentor_turns_total="$(metric_value mentor.turns)"
+  mentor_accepted="$(metric_value mentor.turns 'outcome:accepted')"
+  mentor_completed="$(metric_value mentor.turns 'outcome:completed')"
+  mentor_unexpected="$(awk -v total="$mentor_turns_total" -v accepted="$mentor_accepted" -v completed="$mentor_completed" \
+    'BEGIN { printf "%.0f", total - accepted - completed }')"
+  [[ "$mentor_unexpected" == '0' ]] \
+    || fail "mentor rejected/failed outcome count is $mentor_unexpected instead of zero"
+  application_extension=", \"mentorTurnsTotal\": $mentor_turns_total, \"mentorAccepted\": $mentor_accepted, \"mentorCompleted\": $mentor_completed, \"mentorUnexpectedOutcomes\": $mentor_unexpected"
+  summary_format='ai-learning-ai-mentor-resource-v1'
+  workload_json='{"identities": 40, "ratePerSecond": 8, "durationSeconds": 30, "courseSlug": "ai-mentor-performance", "providerDelayMs": 500}'
 fi
 
 generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -275,7 +302,9 @@ printf '  "application": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids"
 printf '  "postgres": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "database": %s},\n' \
   "$max_postgres_cpu" "$max_postgres_memory" "$postgres_json" >>"$output_file"
 redis_suffix=''
-[[ "$workload_kind" != 'learning-event' && "$workload_kind" != 'notification-websocket' ]] \
+[[ "$workload_kind" != 'learning-event' \
+  && "$workload_kind" != 'notification-websocket' \
+  && "$workload_kind" != 'ai-mentor' ]] \
   || redis_suffix=','
 printf '  "redis": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "keyspaceHits": %s, "keyspaceMisses": %s, "evictedKeys": %s, "usedMemoryPeakBytes": %s}%s\n' \
   "$max_redis_cpu" "$max_redis_memory" "$redis_hits" "$redis_misses" \
@@ -283,6 +312,10 @@ printf '  "redis": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "keyspaceHits":
 if [[ "$workload_kind" == 'learning-event' || "$workload_kind" == 'notification-websocket' ]]; then
   printf '  "kafka": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids": %s}\n' \
     "$max_kafka_cpu" "$max_kafka_memory" "$max_kafka_pids" >>"$output_file"
+fi
+if [[ "$workload_kind" == 'ai-mentor' ]]; then
+  printf '  "provider": {"maxCpuPercent": %s, "maxMemoryPercent": %s, "maxPids": %s}\n' \
+    "$max_provider_cpu" "$max_provider_memory" "$max_provider_pids" >>"$output_file"
 fi
 printf '}\n' >>"$output_file"
 

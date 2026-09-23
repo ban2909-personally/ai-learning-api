@@ -17,6 +17,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.messaging.access.intercept.AuthorizationChannelInterceptor;
 import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager;
+import org.springframework.security.messaging.context.SecurityContextChannelInterceptor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -37,6 +38,7 @@ public class NotificationWebSocketConfig implements WebSocketMessageBrokerConfig
     private final ThreadPoolTaskScheduler scheduler;
     private final ExpiringWebSocketSessions sessions;
     private final StompJwtAuthenticationInterceptor authentication;
+    private final SecurityContextChannelInterceptor securityContext;
     private final AuthorizationChannelInterceptor authorization;
 
     public NotificationWebSocketConfig(
@@ -58,6 +60,7 @@ public class NotificationWebSocketConfig implements WebSocketMessageBrokerConfig
                 sessions,
                 clock
         );
+        this.securityContext = new SecurityContextChannelInterceptor();
         this.authorization = new AuthorizationChannelInterceptor(messageAuthorizationManager());
     }
 
@@ -77,7 +80,7 @@ public class NotificationWebSocketConfig implements WebSocketMessageBrokerConfig
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(authentication, authorization);
+        registration.interceptors(authentication, securityContext, authorization);
     }
 
     @Override

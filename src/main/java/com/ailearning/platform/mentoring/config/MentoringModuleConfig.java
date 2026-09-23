@@ -36,12 +36,14 @@ public class MentoringModuleConfig {
     }
 
     @Bean("mentorTaskExecutor")
-    TaskExecutor mentorTaskExecutor() {
+    TaskExecutor mentorTaskExecutor(MentorExecutorProperties properties) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setThreadNamePrefix("mentor-stream-");
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(32);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(properties.corePoolSize());
+        executor.setMaxPoolSize(properties.maxPoolSize());
+        executor.setQueueCapacity(properties.queueCapacity());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
         executor.initialize();
         return executor;
     }

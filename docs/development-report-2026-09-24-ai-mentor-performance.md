@@ -106,25 +106,54 @@ database/quota/metric count reconciled.
 - `8378255` — orchestrate fail-closed pipeline and resource diagnostics.
 - `745cb6b` — add the independent CI gate, artifact contract, and runbook.
 - `dbca972` — record complete local implementation and pre-push evidence.
+- `98d471e` — record the final feature-CI evidence used by the delivery gate.
 
 ## Feature CI evidence
 
-- Feature CI run `35937887455` passed all ten jobs for exact SHA
-  `dbca9720bded366754b1e02088b28923e9dc6429`: Maven verification,
+- Final feature CI run `35953716170` passed all ten jobs for exact SHA
+  `98d471eb744f10e733dd1c54bbf1c59ee8fce86c`: Maven verification,
   production image/security, PostgreSQL recovery, MinIO recovery, catalog baseline,
   catalog diagnostics, authenticated learning, learning-event throughput,
   notification WebSocket fan-out, and AI Mentor concurrency/token bounds.
 - All eight retained artifacts are non-empty and unexpired: application SBOM
-  `10784215647` (75,092 bytes), image security `10783701642` (71,472 bytes),
-  catalog performance `10783404394` (469 bytes), catalog resource `10783253456`
-  (1,151 bytes), authenticated learning `10784286373` (2,354 bytes), learning event
-  `10783273334` (1,824 bytes), notification WebSocket `10783896620` (2,044 bytes),
-  and AI Mentor `10783766722` (1,752 bytes).
+  `10789541913` (75,092 bytes), image security `10789152885` (71,452 bytes),
+  catalog performance `10790091265` (464 bytes), catalog resource `10789462518`
+  (1,145 bytes), authenticated learning `10789294252` (2,350 bytes), learning event
+  `10789996702` (1,823 bytes), notification WebSocket `10789314107` (2,043 bytes),
+  and AI Mentor `10789294121` (1,759 bytes).
+
+## Merge and main CI evidence
+
+- No-fast-forward merge `7102f5eb7a9abf52f46dd35825691938299b7f37`
+  passed repeated local Maven verification with 203 tests, all twelve Flyway
+  migrations, Spring Modulith, ArchUnit, JaCoCo, and application SBOM checks.
+- The exact merge production image was
+  `sha256:8f134ebda4b647e4fa9196ee6e748daa8bd09b6c3a142de82ca5a03761a9c105`.
+  Runtime identity/entrypoint, image SBOM, fixable HIGH/CRITICAL vulnerability,
+  source/image secret, and cleanup gates passed. PostgreSQL recovery completed in
+  28 seconds and MinIO recovery in 53 seconds.
+- Catalog baseline completed 750 iterations at p95 16.02 ms; diagnostics completed
+  750 at p95 18.01 ms with ten samples. Authenticated read completed 600 at p95
+  17.01 ms with fourteen samples; write completed 301 at p95 25.99 ms with fourteen
+  samples. Learning-event throughput completed 240 at p95 31.78 ms with nineteen
+  samples. Notification WebSocket delivered exactly 80 valid messages across 80
+  sessions at p95 807.10 ms with thirteen samples.
+- AI Mentor completed 241 turns with zero request failure, drop, rejection, active
+  provider request, or reconciliation mismatch. p95 was 581.22 ms, p99 was
+  1,124.35 ms, provider concurrency peaked at eight, and fourteen resource samples
+  were captured against the exact merge image.
+- Main CI run `35956022199` passed all ten jobs for the exact merge SHA. Its eight
+  non-empty, unexpired artifacts are application SBOM `10790402634` (75,092 bytes),
+  image security `10790552298` (71,451 bytes), catalog performance `10790771291`
+  (464 bytes), catalog resource `10790597523` (1,151 bytes), authenticated learning
+  `10790905592` (2,358 bytes), learning event `10789868956` (1,826 bytes),
+  notification WebSocket `10790786296` (2,039 bytes), and AI Mentor `10790651864`
+  (1,752 bytes).
 
 ## Delivery status
 
-Implementation, all local pre-push gates, and exact feature CI are complete.
-No-fast-forward merge verification, exact main CI, main artifact identifiers, and
-the final Phase 8.4b5 checklist line remain intentionally open until those delivery
-steps pass. No production capacity, answer-quality, provider-latency, currency-cost,
-or SLO conclusion is made.
+Implementation, full local pre-push and repeated merge gates, exact feature CI,
+no-fast-forward merge, exact main CI, artifact verification, and delivery reporting
+are complete. This closes Phase 8.4b5 as a portable regression control only. No
+production capacity, answer-quality, provider-latency, currency-cost, or SLO
+conclusion is made.

@@ -27,6 +27,14 @@ checks before allocating resources. It creates a generated private network and
 disposable PostgreSQL, Redis, MinIO, application, client-tool, and k6 containers.
 Never point it at a shared or production service.
 
+The MinIO server and client-tool images use Chainguard's public repositories and
+are pinned to the immutable digests recorded in the harness. The readable
+`latest` labels do not float past those digests. Both images run without root
+privileges; they are isolated test dependencies, not a production provider choice.
+The server is capped at one CPU and 512 MiB memory. Its 2 GiB tmpfs is a logical
+ceiling required by MinIO's free-drive reserve for the 32 MiB fixture and is not
+preallocated; `MINIO_CI_CD=1` keeps the server on its CI memory path.
+
 ## Fixture and regression contract
 
 The fixture is outside Flyway. It contains one published free course, one protected

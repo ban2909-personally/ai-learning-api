@@ -32,6 +32,17 @@ drop capabilities, disallow privilege escalation, and use read-only roots or tmp
 where their runtime permits it. Exact-name and label cleanup is mandatory on both
 success and failure.
 
+The disposable MinIO server and client use Chainguard's public images at explicit
+multi-platform digests. This replaces the formerly pinned Quay images after Quay
+stopped anonymous access to those manifests. It is a CI dependency decision only,
+not a production object-store selection.
+
+The server remains limited to one CPU and 512 MiB memory. Its data tmpfs has a
+2 GiB logical ceiling because current MinIO refuses writes when the backing drive
+has less than its minimum free-space reserve; tmpfs capacity is not allocated
+upfront. `MINIO_CI_CD=1` selects MinIO's documented CI memory behavior. These
+limits are harness prerequisites, not capacity recommendations.
+
 ### Fixture and authentication
 
 - Create one published free course with one lesson and complete media metadata

@@ -120,6 +120,38 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
   57.32/106.55 ms, with 13, 14, and 13 correlated resource samples respectively.
   Final label inspection found no workload container or network.
 
+## Feature CI registry failure and hardening
+
+- Remediation commit `bebd04b` triggered exact feature run `36022085515`. Its
+  `verify` job executed all 204 tests with zero assertion failure, but the MinIO
+  storage integration test ended in `ContainerFetchException`; all dependent jobs
+  were correctly skipped.
+- The runner retried for two pull windows and consistently received
+  `401 Unauthorized` for the pinned Quay MinIO manifest. A direct registry
+  manifest check reproduced the same response, so rerunning the unchanged job
+  would not have been a valid fix.
+- The integration test, MinIO recovery drill, and media profile now use the public
+  Chainguard MinIO server/client images pinned to immutable multi-platform digests.
+  Local contract checks proved non-root execution, health, credentials, `mc`, Bash,
+  and every shell utility required by the existing scripts before source changes.
+- The first full media rerun then correctly failed before traffic because current
+  MinIO enforces a minimum free-drive reserve larger than the former 64 MiB data
+  tmpfs. An isolated 32 MiB upload contract reproduced the refusal and proved the
+  bounded replacement: one CPU, 512 MiB memory, `MINIO_CI_CD=1`, and a 2 GiB
+  logical tmpfs ceiling that is not allocated upfront.
+- The complete recovery drill then passed in 49 seconds, including duplicate
+  snapshot, missing confirmation, non-empty target, tampered inventory, mismatched
+  metadata, and missing/extra object rejection. The full media workload against
+  exact application image
+  `sha256:3baa02249a996184748e5737cae9eaa3c3cb81cf3da187290d8e2649f94cdebd`
+  passed 241/241 responses, 252,706,816 bytes, zero failure/drop, p95 75.08 ms,
+  p99 363.49 ms, and twelve resource samples with the new images.
+- A subsequent uninterrupted `mvn clean verify` passed all 204 tests, twelve
+  migrations, Spring Modulith, ArchUnit, JaCoCo, packaging, and the
+  138-component application SBOM in 4 minutes 55 seconds.
+- No application runtime, API, persistence behavior, fixture, performance budget,
+  recovery invariant, or production provider decision changed.
+
 ## Cohesive implementation commits
 
 - `b18ef27` — define ADR-018 and the Phase 8.4b6 boundary.
@@ -127,6 +159,7 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
 - `fbdb0b2` — add fail-closed orchestration and MinIO-aware diagnostics.
 - `8f06146` — add the independent CI gate, artifact contract, and runbook.
 - `cd79e6d` — record complete local implementation and pre-push evidence.
+- `bebd04b` — write security headers before asynchronous media processing.
 
 ## Feature CI evidence
 

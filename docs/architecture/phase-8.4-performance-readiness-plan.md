@@ -137,6 +137,26 @@ exact SHA after all local merge gates passed.
 - [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
+### Phase 8.4b6 — Authenticated media range bandwidth
+
+- [x] Record the isolated MinIO topology, authenticated range workload, regression
+  budgets, byte-integrity contract, evidence limits, and non-goals before
+  implementation.
+- [x] Add a deterministic media object and database fixture outside Flyway, then
+  verify exact object size/ETag before traffic.
+- [x] Register and enroll isolated identities through existing HTTP contracts and
+  drive media-scoped cookie requests through the production image.
+- [x] Gate status, range headers, ETag, content type, byte length/hash, achieved
+  work, dropped work, failures, transferred bytes, and latency.
+- [x] Extend shared diagnostics with MinIO container evidence and correlate
+  application/JVM/Hikari, PostgreSQL, Redis, and storage resources to the exact
+  production image.
+- [x] Reconcile exact fixture, identity, enrollment, response, and byte counts; add
+  fail-closed orchestration, cleanup, compact artifacts, CI isolation/retention,
+  and an operations runbook.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
+
 ### Phase 8.4c — Production SLO and capacity policy
 
 - [ ] Obtain business-approved SLIs/SLOs, traffic forecasts, peak concurrency,

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-server_image='quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e'
-client_image='quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3'
+server_image='cgr.dev/chainguard/minio:latest@sha256:bd014394a80898e68c149f2311fdf8d5a2c2f3bb2c33b9327ae6d02b4b065ae1'
+client_image='cgr.dev/chainguard/minio-client:latest@sha256:b8b144ab34694ecea25aa352c4be9de4c26ee2a02701521dce02ee5593c57338'
 resource_prefix="ai-learning-minio-recovery-$(date -u +'%s')-$$"
 network_name="$resource_prefix-network"
 source_server="$resource_prefix-source"

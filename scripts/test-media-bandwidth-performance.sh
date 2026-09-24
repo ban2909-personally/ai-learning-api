@@ -3,8 +3,8 @@ set -euo pipefail
 
 postgres_image='postgres:17-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'
 redis_image='redis:7.4-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf'
-minio_server_image='quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e'
-minio_client_image='quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3'
+minio_server_image='cgr.dev/chainguard/minio:latest@sha256:bd014394a80898e68c149f2311fdf8d5a2c2f3bb2c33b9327ae6d02b4b065ae1'
+minio_client_image='cgr.dev/chainguard/minio-client:latest@sha256:b8b144ab34694ecea25aa352c4be9de4c26ee2a02701521dce02ee5593c57338'
 k6_image='grafana/k6:2.2.0@sha256:9bd01d6941fca969cb61bb57d2da5ee9b385fe2aa8881df3798c196564d6ace6'
 app_image="${PERFORMANCE_APP_IMAGE:-ai-learning-api:ci}"
 resource_prefix="alp-media-$(date -u +'%s')-$$"
@@ -69,6 +69,11 @@ fi
 
 fail() {
   printf 'Media bandwidth performance failed: %s\n' "$1" >&2
+  if docker inspect "$app_container" >/dev/null 2>&1; then
+    printf '%s\n' '--- application log tail (failure diagnostics) ---' >&2
+    docker logs --tail 200 "$app_container" >&2 || true
+    printf '%s\n' '--- end application log tail ---' >&2
+  fi
   exit 1
 }
 
@@ -248,9 +253,10 @@ docker run --detach \
   --cap-drop ALL \
   --security-opt no-new-privileges:true \
   --pids-limit 128 \
-  --memory 256m \
+  --memory 512m \
   --cpus 1 \
-  --tmpfs /data:rw,noexec,nosuid,size=64m \
+  --tmpfs /data:rw,noexec,nosuid,size=2g \
+  --env MINIO_CI_CD=1 \
   --env MINIO_ROOT_USER \
   --env MINIO_ROOT_PASSWORD \
   "$minio_server_image" server /data --console-address ':9001' >/dev/null

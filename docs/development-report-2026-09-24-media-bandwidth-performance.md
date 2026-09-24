@@ -87,6 +87,71 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
   All 40 identities/enrollments, the 32 MiB object and ETag, 1 MiB response hashes,
   and zero progress/outbox side effects reconciled against the exact image.
 
+## Pre-main asynchronous response defect and remediation
+
+- Repeated gates on the first local merge exposed four intermittent outcomes: two
+  runs returned one malformed HTTP header, one returned an early EOF, and one
+  passed. The release gate correctly rejected all non-zero error runs and `main`
+  was not pushed.
+- Application logs identified a response-lifecycle race, not a MinIO or range-data
+  defect: Spring Security's `XFrameOptionsHeaderWriter` called
+  `HeaderWriterFilter.doHeadersAfter` while Tomcat was recycling `MimeHeaders` for
+  the completed asynchronous response.
+- `SecurityConfig` now uses Spring Security's non-deprecated
+  `ObjectPostProcessor` API to make its existing security-header filter write
+  eagerly. Authentication, authorization, headers, range bytes, REST contracts,
+  persistence, and module boundaries are unchanged.
+- `LessonMediaApiIntegrationTest` now proves that the configured filter emits
+  `X-Content-Type-Options` and `X-Frame-Options` before downstream asynchronous
+  processing begins. The media harness also emits a bounded 200-line application
+  log tail on failure before exact cleanup; logs remain excluded from artifacts.
+- A fresh uninterrupted `mvn clean verify` passed 204 tests, all twelve migrations,
+  Spring Modulith, ArchUnit, JaCoCo, packaging, and the 138-component application
+  SBOM in 6 minutes 18 seconds.
+- Production image
+  `sha256:3baa02249a996184748e5737cae9eaa3c3cb81cf3da187290d8e2649f94cdebd`
+  passed the runtime contract and container security gate. Its image SBOM contains
+  153 components; the complete inventory remains 67 known findings (41 MEDIUM,
+  18 LOW, eight unfixed HIGH), with zero fixable HIGH/CRITICAL finding and clean
+  source/image secret scans.
+- Three consecutive isolated media workloads against that exact image each passed
+  241/241 responses, 252,706,816 transferred bytes, zero failure, and zero dropped
+  iteration. Their p95/p99 durations were 65.90/123.98 ms, 56.15/136.01 ms, and
+  57.32/106.55 ms, with 13, 14, and 13 correlated resource samples respectively.
+  Final label inspection found no workload container or network.
+
+## Feature CI registry failure and hardening
+
+- Remediation commit `bebd04b` triggered exact feature run `36022085515`. Its
+  `verify` job executed all 204 tests with zero assertion failure, but the MinIO
+  storage integration test ended in `ContainerFetchException`; all dependent jobs
+  were correctly skipped.
+- The runner retried for two pull windows and consistently received
+  `401 Unauthorized` for the pinned Quay MinIO manifest. A direct registry
+  manifest check reproduced the same response, so rerunning the unchanged job
+  would not have been a valid fix.
+- The integration test, MinIO recovery drill, and media profile now use the public
+  Chainguard MinIO server/client images pinned to immutable multi-platform digests.
+  Local contract checks proved non-root execution, health, credentials, `mc`, Bash,
+  and every shell utility required by the existing scripts before source changes.
+- The first full media rerun then correctly failed before traffic because current
+  MinIO enforces a minimum free-drive reserve larger than the former 64 MiB data
+  tmpfs. An isolated 32 MiB upload contract reproduced the refusal and proved the
+  bounded replacement: one CPU, 512 MiB memory, `MINIO_CI_CD=1`, and a 2 GiB
+  logical tmpfs ceiling that is not allocated upfront.
+- The complete recovery drill then passed in 49 seconds, including duplicate
+  snapshot, missing confirmation, non-empty target, tampered inventory, mismatched
+  metadata, and missing/extra object rejection. The full media workload against
+  exact application image
+  `sha256:3baa02249a996184748e5737cae9eaa3c3cb81cf3da187290d8e2649f94cdebd`
+  passed 241/241 responses, 252,706,816 bytes, zero failure/drop, p95 75.08 ms,
+  p99 363.49 ms, and twelve resource samples with the new images.
+- A subsequent uninterrupted `mvn clean verify` passed all 204 tests, twelve
+  migrations, Spring Modulith, ArchUnit, JaCoCo, packaging, and the
+  138-component application SBOM in 4 minutes 55 seconds.
+- No application runtime, API, persistence behavior, fixture, performance budget,
+  recovery invariant, or production provider decision changed.
+
 ## Cohesive implementation commits
 
 - `b18ef27` — define ADR-018 and the Phase 8.4b6 boundary.
@@ -94,6 +159,7 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
 - `fbdb0b2` — add fail-closed orchestration and MinIO-aware diagnostics.
 - `8f06146` — add the independent CI gate, artifact contract, and runbook.
 - `cd79e6d` — record complete local implementation and pre-push evidence.
+- `bebd04b` — write security headers before asynchronous media processing.
 
 ## Feature CI evidence
 
@@ -109,10 +175,14 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
   authenticated learning `10803888224` (2.31 KB), learning event `10803803862`
   (1.78 KB), notification WebSocket `10803888134` (1.99 KB), AI Mentor
   `10803917827` (1.71 KB), and media bandwidth `10803738805` (1.82 KB).
+- Exact evidence CI run `35991139008` then passed all eleven jobs for SHA
+  `17d249cb52cf982f20d865c06d4019b58f70405a`. Its nine artifacts were also
+  non-empty and unexpired, including media bandwidth artifact `10803699551`.
 
 ## Delivery status
 
-Implementation, all local pre-push gates, exact pre-evidence feature CI, and
-artifact verification are complete. Exact CI for the evidence-only commit,
-no-fast-forward merge, repeated merge gates, exact main CI, and final delivery
-evidence remain pending and must complete before Phase 8.4b6 is closed.
+Implementation, original feature CI, defect reproduction, remediation, post-fix
+Maven/runtime/security gates, and three consecutive post-fix media workloads are
+complete. A cohesive remediation commit, exact feature CI, updated no-fast-forward
+merge, repeated merge gates, exact main CI, and final delivery evidence remain
+pending and must complete before Phase 8.4b6 is closed.

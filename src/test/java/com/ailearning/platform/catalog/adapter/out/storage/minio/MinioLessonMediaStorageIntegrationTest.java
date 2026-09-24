@@ -22,11 +22,11 @@ class MinioLessonMediaStorageIntegrationTest {
 
     @Container
     static final GenericContainer<?> MINIO = new GenericContainer<>(DockerImageName.parse(
-            "quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e"
+            "cgr.dev/chainguard/minio:latest@sha256:bd014394a80898e68c149f2311fdf8d5a2c2f3bb2c33b9327ae6d02b4b065ae1"
     ))
             .withEnv("MINIO_ROOT_USER", ACCESS_KEY)
             .withEnv("MINIO_ROOT_PASSWORD", SECRET_KEY)
-            .withCommand("server", "/data")
+            .withCommand("server", "/tmp/minio-data")
             .withExposedPorts(9000)
             .waitingFor(Wait.forHttp("/minio/health/ready").forPort(9000));
 

@@ -32,6 +32,17 @@ drop capabilities, disallow privilege escalation, and use read-only roots or tmp
 where their runtime permits it. Exact-name and label cleanup is mandatory on both
 success and failure.
 
+The disposable MinIO server and client use Chainguard's public images at explicit
+multi-platform digests. This replaces the formerly pinned Quay images after Quay
+stopped anonymous access to those manifests. It is a CI dependency decision only,
+not a production object-store selection.
+
+The server remains limited to one CPU and 512 MiB memory. Its data tmpfs has a
+2 GiB logical ceiling because current MinIO refuses writes when the backing drive
+has less than its minimum free-space reserve; tmpfs capacity is not allocated
+upfront. `MINIO_CI_CD=1` selects MinIO's documented CI memory behavior. These
+limits are harness prerequisites, not capacity recommendations.
+
 ### Fixture and authentication
 
 - Create one published free course with one lesson and complete media metadata
@@ -84,6 +95,27 @@ cleanup, and absence of secrets before succeeding. CI runs the profile as an
 independent job after the production image and retains a single artifact containing
 the three summaries.
 
+### Asynchronous response lifecycle safety
+
+Repeated pre-main verification exposed an intermittent malformed HTTP response:
+Tomcat recycled its response headers while Spring Security's `HeaderWriterFilter`
+was still writing frame options after asynchronous media processing. The resulting
+`MimeHeaders` null pointer produced either a malformed header line or an early EOF
+in roughly one request per workload.
+
+Security headers are therefore written eagerly, before the remaining filter chain
+starts. This keeps all existing default security headers while removing the late
+write from the asynchronous completion path; it does not change authentication,
+authorization, REST, range, or database behavior. An integration regression test
+rejects any security-header write after downstream processing starts. The workload
+runner prints only a bounded application-log tail on failure so the lifecycle error
+is diagnosable without retaining logs in artifacts.
+
+This mitigation follows the public `HeaderWriterFilter` eager-write contract and
+addresses the same `MimeHeaders` under-load failure shape reported by Spring
+Security. The production-image workload remains the authoritative end-to-end gate
+because servlet mocks cannot reproduce Tomcat response recycling.
+
 ## Consequences
 
 The project gains repeatable evidence for authenticated single-range delivery,
@@ -96,3 +128,12 @@ geographic latency, origin egress cost, CDN/cache-hit behavior, HLS/DASH segment
 performance, upload capacity, transcoding capacity, spike/saturation/soak behavior,
 or a production SLO. Those require an approved deployment topology, traffic model,
 representative media corpus, downstream quotas, and business policy.
+
+## References
+
+- Spring Security `HeaderWriterFilter` API:
+  https://docs.spring.io/spring-security/reference/6.5/api/java/org/springframework/security/web/header/HeaderWriterFilter.html
+- Spring Security issue 10835, `MimeHeaders` null pointer under load:
+  https://github.com/spring-projects/spring-security/issues/10835
+- Spring Framework issue 33439, asynchronous `StreamingResponseBody` error race:
+  https://github.com/spring-projects/spring-framework/issues/33439

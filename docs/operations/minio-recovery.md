@@ -9,12 +9,18 @@ copy object-version history, delete markers, bucket policy, object-lock state,
 replication configuration, or encryption keys.
 
 Use Bash on Linux, WSL, or Git Bash. Run the scripts from a controlled operations
-host with MinIO Client (`mc`) available. CI uses this release pinned to its immutable
-multi-platform digest:
+host with MinIO Client (`mc`) available. CI uses the Chainguard server and client
+images pinned to immutable multi-platform digests:
 
 ```text
-quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+cgr.dev/chainguard/minio:latest@sha256:bd014394a80898e68c149f2311fdf8d5a2c2f3bb2c33b9327ae6d02b4b065ae1
+cgr.dev/chainguard/minio-client:latest@sha256:b8b144ab34694ecea25aa352c4be9de4c26ee2a02701521dce02ee5593c57338
 ```
+
+The readable `latest` labels are not floating inputs because Docker resolves the
+explicit digests. Both containers run without root privileges in the drill. These
+portable images are test tooling only; the production object-store provider and
+its supported release policy remain Phase 8.3c decisions.
 
 ## Credentials and access
 

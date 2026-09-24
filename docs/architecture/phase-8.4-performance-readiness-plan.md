@@ -134,7 +134,7 @@ exact SHA after all local merge gates passed.
   production image.
 - [x] Add fail-closed orchestration, exact cleanup, compact non-secret artifacts, CI
   isolation/retention, and an operations runbook.
-- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+- [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
 ### Phase 8.4c — Production SLO and capacity policy
@@ -230,3 +230,20 @@ regression baseline, and Phase 8.4b1 adds diagnosis rather than production limit
   catalog resource, authenticated learning, learning-event, and notification
   WebSocket artifacts are `10754547153`, `10754417757`, `10754905703`,
   `10755075649`, `10754651034`, `10754083616`, and `10754123610`, respectively.
+
+## Phase 8.4b5 delivery evidence
+
+- Final feature CI run `35953716170` passed all ten jobs for exact evidence SHA
+  `98d471eb744f10e733dd1c54bbf1c59ee8fce86c`. Its eight non-empty, unexpired
+  artifacts include AI Mentor artifact `10789294121` at 1,759 bytes.
+- No-fast-forward merge `7102f5eb7a9abf52f46dd35825691938299b7f37`
+  passed repeated local Maven (`203` tests), production-image runtime/security,
+  PostgreSQL/MinIO recovery, catalog baseline/diagnostics, authenticated read/write,
+  learning-event throughput, notification WebSocket fan-out, AI Mentor concurrency
+  and token-cost bounds, evidence-integrity, cleanup, and working-tree gates.
+- Main CI run `35956022199` passed all ten jobs for that exact merge SHA. Its
+  non-empty, unexpired application SBOM, image security, catalog performance,
+  catalog resource, authenticated learning, learning-event, notification WebSocket,
+  and AI Mentor artifacts are `10790402634`, `10790552298`, `10790771291`,
+  `10790597523`, `10790905592`, `10789868956`, `10790786296`, and `10790651864`,
+  respectively.

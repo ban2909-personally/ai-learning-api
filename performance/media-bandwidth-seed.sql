@@ -86,25 +86,22 @@ ANALYZE courses;
 ANALYZE course_sections;
 ANALYZE lessons;
 
-DO $$
-DECLARE
-    fixture_count bigint;
-BEGIN
-    SELECT count(*) INTO fixture_count
-    FROM courses c
-    JOIN course_sections s ON s.course_id = c.id
-    JOIN lessons l ON l.section_id = s.id
-    WHERE c.slug = 'media-bandwidth-performance'
-      AND c.status = 'PUBLISHED'
-      AND c.price = 0
-      AND l.id = '34000000-0000-0000-0000-000000000001'
-      AND l.media_object_key = 'courses/14000000-0000-0000-0000-000000000001/lessons/34000000-0000-0000-0000-000000000001/media'
-      AND l.media_content_type = 'video/mp4'
-      AND l.media_size_bytes = 33554432
-      AND l.media_etag = :'media_etag';
+SELECT count(*) = 1 AS fixture_valid
+FROM courses c
+JOIN course_sections s ON s.course_id = c.id
+JOIN lessons l ON l.section_id = s.id
+WHERE c.slug = 'media-bandwidth-performance'
+  AND c.status = 'PUBLISHED'
+  AND c.price = 0
+  AND l.id = '34000000-0000-0000-0000-000000000001'
+  AND l.media_object_key = 'courses/14000000-0000-0000-0000-000000000001/lessons/34000000-0000-0000-0000-000000000001/media'
+  AND l.media_content_type = 'video/mp4'
+  AND l.media_size_bytes = 33554432
+  AND l.media_etag = :'media_etag'
+\gset
 
-    IF fixture_count <> 1 THEN
-        RAISE EXCEPTION 'expected one complete media performance fixture, found %', fixture_count;
-    END IF;
-END
-$$;
+\if :fixture_valid
+\else
+    \echo 'expected one complete media performance fixture'
+    \quit 4
+\endif

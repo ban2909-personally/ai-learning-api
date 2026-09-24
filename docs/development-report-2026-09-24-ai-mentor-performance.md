@@ -105,11 +105,26 @@ database/quota/metric count reconciled.
 - `c635286` — scale and validate the bounded AI Mentor stream executor.
 - `8378255` — orchestrate fail-closed pipeline and resource diagnostics.
 - `745cb6b` — add the independent CI gate, artifact contract, and runbook.
+- `dbca972` — record complete local implementation and pre-push evidence.
+
+## Feature CI evidence
+
+- Feature CI run `35937887455` passed all ten jobs for exact SHA
+  `dbca9720bded366754b1e02088b28923e9dc6429`: Maven verification,
+  production image/security, PostgreSQL recovery, MinIO recovery, catalog baseline,
+  catalog diagnostics, authenticated learning, learning-event throughput,
+  notification WebSocket fan-out, and AI Mentor concurrency/token bounds.
+- All eight retained artifacts are non-empty and unexpired: application SBOM
+  `10784215647` (75,092 bytes), image security `10783701642` (71,472 bytes),
+  catalog performance `10783404394` (469 bytes), catalog resource `10783253456`
+  (1,151 bytes), authenticated learning `10784286373` (2,354 bytes), learning event
+  `10783273334` (1,824 bytes), notification WebSocket `10783896620` (2,044 bytes),
+  and AI Mentor `10783766722` (1,752 bytes).
 
 ## Delivery status
 
-Implementation and all local pre-push gates are complete. Exact feature CI,
-no-fast-forward merge verification, exact main CI, retained artifact identifiers,
-and the final Phase 8.4b5 checklist line remain intentionally open until those
-delivery steps pass. No production capacity, answer-quality, provider-latency,
-currency-cost, or SLO conclusion is made.
+Implementation, all local pre-push gates, and exact feature CI are complete.
+No-fast-forward merge verification, exact main CI, main artifact identifiers, and
+the final Phase 8.4b5 checklist line remain intentionally open until those delivery
+steps pass. No production capacity, answer-quality, provider-latency, currency-cost,
+or SLO conclusion is made.

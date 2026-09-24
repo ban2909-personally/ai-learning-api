@@ -93,10 +93,26 @@ it is not a production capacity, CDN, HLS/DASH, internet-bandwidth, or SLO claim
 - `db51c17` — add the deterministic fixture and authenticated range workload.
 - `fbdb0b2` — add fail-closed orchestration and MinIO-aware diagnostics.
 - `8f06146` — add the independent CI gate, artifact contract, and runbook.
+- `cd79e6d` — record complete local implementation and pre-push evidence.
+
+## Feature CI evidence
+
+- Feature CI run `35989835206` passed all eleven jobs for exact pre-evidence SHA
+  `cd79e6dc0d1607b916c8b969999c0d00bd768bfe`: Maven verification, production
+  image/security, PostgreSQL recovery, MinIO recovery, catalog baseline, catalog
+  diagnostics, authenticated learning, learning-event throughput, notification
+  WebSocket fan-out, AI Mentor concurrency/token bounds, and authenticated media
+  range bandwidth.
+- All nine retained artifacts are non-empty and unexpired: application SBOM
+  `10803897439` (73.3 KB), image security `10803034183` (69.8 KB), catalog
+  performance `10804116267` (464 bytes), catalog resource `10803627770` (1.13 KB),
+  authenticated learning `10803888224` (2.31 KB), learning event `10803803862`
+  (1.78 KB), notification WebSocket `10803888134` (1.99 KB), AI Mentor
+  `10803917827` (1.71 KB), and media bandwidth `10803738805` (1.82 KB).
 
 ## Delivery status
 
-Implementation and all local pre-push gates are complete. Exact feature CI,
-artifact verification, no-fast-forward merge, repeated merge gates, exact main CI,
-and final delivery evidence remain pending and must complete before Phase 8.4b6 is
-closed.
+Implementation, all local pre-push gates, exact pre-evidence feature CI, and
+artifact verification are complete. Exact CI for the evidence-only commit,
+no-fast-forward merge, repeated merge gates, exact main CI, and final delivery
+evidence remain pending and must complete before Phase 8.4b6 is closed.

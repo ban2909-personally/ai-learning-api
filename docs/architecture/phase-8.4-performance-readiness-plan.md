@@ -154,6 +154,8 @@ exact SHA after all local merge gates passed.
 - [x] Reconcile exact fixture, identity, enrollment, response, and byte counts; add
   fail-closed orchestration, cleanup, compact artifacts, CI isolation/retention,
   and an operations runbook.
+- [x] Prevent late security-header writes across the asynchronous media response
+  lifecycle and cover the ordering contract with an integration regression test.
 - [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 

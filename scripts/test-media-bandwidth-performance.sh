@@ -69,6 +69,11 @@ fi
 
 fail() {
   printf 'Media bandwidth performance failed: %s\n' "$1" >&2
+  if docker inspect "$app_container" >/dev/null 2>&1; then
+    printf '%s\n' '--- application log tail (failure diagnostics) ---' >&2
+    docker logs --tail 200 "$app_container" >&2 || true
+    printf '%s\n' '--- end application log tail ---' >&2
+  fi
   exit 1
 }
 

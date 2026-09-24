@@ -9,6 +9,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -16,6 +18,8 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -32,6 +36,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -78,6 +83,9 @@ class LessonMediaApiIntegrationTest {
 
     @Autowired
     SecurityProperties securityProperties;
+
+    @Autowired
+    SecurityFilterChain securityFilterChain;
 
     @MockitoBean
     LessonMediaStorage storage;
@@ -168,6 +176,28 @@ class LessonMediaApiIntegrationTest {
     }
 
     @Test
+    void securityHeadersAreWrittenBeforeAsynchronousMediaProcessingStarts() throws Exception {
+        HeaderWriterFilter headerWriterFilter = securityFilterChain.getFilters().stream()
+                .filter(HeaderWriterFilter.class::isInstance)
+                .map(HeaderWriterFilter.class::cast)
+                .findFirst()
+                .orElseThrow();
+        var request = new MockHttpServletRequest(
+                "GET",
+                "/api/v1/media/courses/media-delivery-test/lessons/" + LESSON_ID
+        );
+        var response = new DownstreamLifecycleResponse();
+
+        headerWriterFilter.doFilter(request, response, (ignoredRequest, ignoredResponse) ->
+                response.markDownstreamStarted());
+
+        assertThat(response.getHeader("X-Content-Type-Options"))
+                .isEqualTo("nosniff");
+        assertThat(response.getHeader("X-Frame-Options"))
+                .isEqualTo("DENY");
+    }
+
+    @Test
     void anonymousUserCannotStreamLessonMedia() throws Exception {
         mockMvc.perform(get(
                         "/api/v1/media/courses/media-delivery-test/lessons/{lessonId}",
@@ -187,5 +217,31 @@ class LessonMediaApiIntegrationTest {
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    private static final class DownstreamLifecycleResponse extends MockHttpServletResponse {
+        private boolean downstreamStarted;
+
+        void markDownstreamStarted() {
+            downstreamStarted = true;
+        }
+
+        @Override
+        public void setHeader(String name, String value) {
+            rejectLateHeader(name);
+            super.setHeader(name, value);
+        }
+
+        @Override
+        public void addHeader(String name, String value) {
+            rejectLateHeader(name);
+            super.addHeader(name, value);
+        }
+
+        private void rejectLateHeader(String name) {
+            if (downstreamStarted) {
+                throw new IllegalStateException("Header written after downstream processing started: " + name);
+            }
+        }
     }
 }

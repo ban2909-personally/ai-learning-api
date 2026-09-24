@@ -94,3 +94,7 @@ Treat any wrong header/hash/count, changed object, missing artifact/field, wrong
 image ID, insufficient resource samples, latency breach, unauthorized metrics
 access, secret retention, or leftover resource as a failed run. Diagnose all three
 summaries together.
+
+On failure, the harness prints the last 200 application-log lines before cleanup.
+This bounded diagnostic is console-only and must not be added to retained CI
+artifacts because it may contain request or infrastructure context.

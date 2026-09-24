@@ -117,6 +117,26 @@ exact SHA after all local merge gates passed.
 - [x] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
   gates, exact main CI, and final delivery reporting.
 
+### Phase 8.4b5 — AI Mentor concurrency and token-cost bounds
+
+- [x] Record the isolated provider boundary, authenticated workload, regression
+  budgets, token-cost proxy, evidence limits, and non-goals before implementation.
+- [x] Add a deterministic free-course/lesson fixture and a private protocol
+  simulator that validates the existing OpenAI Responses SSE contract without an
+  external provider call.
+- [x] Register and enroll isolated identities through existing HTTP contracts, then
+  gate SSE ordering, correctness, achieved work, failures, dropped work, and latency.
+- [x] Reconcile exact client completions, provider requests/concurrency, mentor
+  conversations/messages, persisted input/output usage, quota, and application
+  outcome counters.
+- [x] Extend shared diagnostics with provider container evidence and correlate
+  application/JVM/Hikari, PostgreSQL, Redis, and provider resources to the exact
+  production image.
+- [x] Add fail-closed orchestration, exact cleanup, compact non-secret artifacts, CI
+  isolation/retention, and an operations runbook.
+- [ ] Pass full local gates, exact feature CI, no-fast-forward merge, repeated merge
+  gates, exact main CI, and final delivery reporting.
+
 ### Phase 8.4c — Production SLO and capacity policy
 
 - [ ] Obtain business-approved SLIs/SLOs, traffic forecasts, peak concurrency,

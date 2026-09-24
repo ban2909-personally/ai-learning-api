@@ -293,3 +293,37 @@ jobs:
             target/performance/notification-websocket-resource-summary.json
           if-no-files-found: error
           retention-days: 14
+
+  ai-mentor-performance:
+    needs: container-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Build production image
+        run: docker build --tag ai-learning-api:ci .
+
+      - name: Verify AI Mentor harness syntax
+        run: >-
+          bash -n
+          scripts/collect-resource-diagnostics.sh
+          scripts/test-ai-mentor-performance.sh
+
+      - name: Prove AI Mentor concurrency and token-cost bounds
+        run: bash scripts/test-ai-mentor-performance.sh
+
+      - name: Retain compact AI Mentor evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ai-mentor-${{ github.sha }}
+          path: |
+            target/performance/ai-mentor-client-summary.json
+            target/performance/ai-mentor-pipeline-summary.json
+            target/performance/ai-mentor-resource-summary.json
+          if-no-files-found: error
+          retention-days: 14

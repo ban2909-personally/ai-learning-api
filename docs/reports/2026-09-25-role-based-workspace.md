@@ -73,7 +73,23 @@ and flipped a student's flashcard. A student lesson-media range request returned
 Headless ChromeDriver did not dispatch pointer clicks for some interior controls, so the
 browser smoke visited the form through its verified URL and exercised flashcard DOM click
 handlers; native pointer interaction on a user device remains a manual acceptance check.
-Commit, remote CI and merge details will be recorded after they complete.
+
+## Git delivery evidence
+
+All code and documentation were committed on `feature/role-based-learning-workspace` and pushed
+before merging. Backend feature commits: `7d2eea4` (implementation), `6bc5c6e` (ADR and report).
+Frontend feature commit: `96d998b`. The product merge commits are `a28417e` (backend main) and
+`0d9d9cb` (frontend main); the merge trees exactly matched their tested feature trees.
+
+- Backend feature [CI run](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36150817393): success.
+- Frontend feature [CI run](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36150843888): success.
+- Backend main [CI run](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36151937234): success, including recovery, container and performance gates.
+- Frontend main [CI run](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36152023242): success.
+
+Backend main was already ten commits ahead of `origin/main` before this feature; those earlier
+media-bandwidth commits were published with the product merge. The backend feature and main CI
+runs validated their combined tree. The pre-existing uncommitted
+`performance/ai-mentor.js` work remains local and was never staged or committed by this delivery.
 
 ## Local preview replay
 

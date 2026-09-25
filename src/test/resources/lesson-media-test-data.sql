@@ -6,6 +6,13 @@ INSERT INTO user_roles (user_id, role_id) VALUES
     ('df353774-10f6-4c7a-965b-8573113d37e8', '254f63d9-eaac-4761-b16f-3caa7bd231d7'),
     ('27fdd7d8-3972-45b4-82cb-4056b59ec461', '38f571c6-5713-4d82-9855-8ebc91a16516');
 
+INSERT INTO users (id, email, password_hash, display_name, status)
+VALUES ('1c17a33e-8734-4d98-b139-a2f797f2fe79', 'admin.media@example.com', 'not-used', 'Admin Media', 'ACTIVE')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO user_roles (user_id, role_id)
+SELECT '1c17a33e-8734-4d98-b139-a2f797f2fe79', id FROM roles WHERE code='ADMIN'
+ON CONFLICT DO NOTHING;
+
 INSERT INTO courses (
     id, instructor_id, category_id, slug, title, short_description, description,
     level, language, price, currency, estimated_duration_minutes, status, published_at

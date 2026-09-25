@@ -1,6 +1,9 @@
 package com.ailearning.platform.platform.security;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+
+import jakarta.servlet.http.Cookie;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,46 +30,75 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import jakarta.servlet.http.Cookie;
-import java.util.Arrays;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, BearerTokenResolver bearerTokenResolver) throws Exception {
-        return http
-                .cors(Customizer.withDefaults())
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http, BearerTokenResolver bearerTokenResolver) throws Exception {
+        return http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.withObjectPostProcessor(
-                        new ObjectPostProcessor<HeaderWriterFilter>() {
-                            @Override
-                            public <O extends HeaderWriterFilter> O postProcess(O filter) {
-                                filter.setShouldWriteHeadersEagerly(true);
-                                return filter;
-                            }
-                        }
-                ))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/health/**").permitAll()
-                        .requestMatchers("/ws/notifications").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/courses", "/api/v1/courses/**", "/api/v1/categories").permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout").permitAll()
-                        .anyRequest().authenticated())
-                .oauth2ResourceServer(resourceServer -> resourceServer
-                        .bearerTokenResolver(bearerTokenResolver)
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .headers(
+                        headers ->
+                                headers.withObjectPostProcessor(
+                                        new ObjectPostProcessor<HeaderWriterFilter>() {
+                                            @Override
+                                            public <O extends HeaderWriterFilter> O postProcess(
+                                                    O filter) {
+                                                filter.setShouldWriteHeadersEagerly(true);
+                                                return filter;
+                                            }
+                                        }))
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        authorize ->
+                                authorize
+                                        .requestMatchers("/actuator/health/**")
+                                        .permitAll()
+                                        .requestMatchers("/ws/notifications")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/v1/courses",
+                                                "/api/v1/courses/**",
+                                                "/api/v1/categories")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/v1/auth/register",
+                                                "/api/v1/auth/login",
+                                                "/api/v1/auth/refresh",
+                                                "/api/v1/auth/logout")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
+                                        .authenticated()
+                                        .requestMatchers("/api/v1/**")
+                                        .hasAnyRole(
+                                                "STUDENT",
+                                                "INSTRUCTOR",
+                                                "LECTURE",
+                                                "LEADER",
+                                                "ADMIN")
+                                        .anyRequest()
+                                        .authenticated())
+                .oauth2ResourceServer(
+                        resourceServer ->
+                                resourceServer
+                                        .bearerTokenResolver(bearerTokenResolver)
+                                        .jwt(
+                                                jwt ->
+                                                        jwt.jwtAuthenticationConverter(
+                                                                jwtAuthenticationConverter())))
                 .build();
     }
 
@@ -78,9 +110,11 @@ public class SecurityConfig {
             if (headerToken != null) {
                 return headerToken;
             }
-            boolean mediaRead = (HttpMethod.GET.matches(request.getMethod())
-                    || HttpMethod.HEAD.matches(request.getMethod()))
-                    && request.getRequestURI().startsWith(request.getContextPath() + "/api/v1/media/");
+            boolean mediaRead =
+                    (HttpMethod.GET.matches(request.getMethod())
+                                    || HttpMethod.HEAD.matches(request.getMethod()))
+                            && request.getRequestURI()
+                                    .startsWith(request.getContextPath() + "/api/v1/media/");
             if (!mediaRead || request.getCookies() == null) {
                 return null;
             }
@@ -105,9 +139,10 @@ public class SecurityConfig {
 
     @Bean
     JwtDecoder jwtDecoder(SecretKey jwtSecretKey, SecurityProperties properties) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
-                .macAlgorithm(MacAlgorithm.HS256)
-                .build();
+        NimbusJwtDecoder decoder =
+                NimbusJwtDecoder.withSecretKey(jwtSecretKey)
+                        .macAlgorithm(MacAlgorithm.HS256)
+                        .build();
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
         return decoder;
     }
@@ -135,8 +170,10 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(properties.allowedOrigin()));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(
+                List.of("Authorization", "Content-Type", "Idempotency-Key"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

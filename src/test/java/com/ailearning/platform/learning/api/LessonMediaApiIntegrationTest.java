@@ -1,41 +1,5 @@
 package com.ailearning.platform.learning.api;
 
-import com.ailearning.platform.catalog.application.port.out.LessonMediaStorage;
-import com.ailearning.platform.catalog.domain.model.LessonMediaAsset;
-import com.ailearning.platform.platform.security.SecurityProperties;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jwt.JwsHeader;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.header.HeaderWriterFilter;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
-import jakarta.servlet.http.Cookie;
-import java.io.ByteArrayInputStream;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -51,11 +15,52 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.ailearning.platform.catalog.application.port.out.LessonMediaStorage;
+import com.ailearning.platform.catalog.domain.model.LessonMediaAsset;
+import com.ailearning.platform.platform.security.SecurityProperties;
+
+import jakarta.servlet.http.Cookie;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.HeaderWriterFilter;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.io.ByteArrayInputStream;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
-@Sql(scripts = "/lesson-media-test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-@Sql(scripts = "/lesson-media-test-cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+@Sql(
+        scripts = "/lesson-media-test-data.sql",
+        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(
+        scripts = "/lesson-media-test-cleanup.sql",
+        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class LessonMediaApiIntegrationTest {
     private static final UUID OWNER_ID = UUID.fromString("df353774-10f6-4c7a-965b-8573113d37e8");
     private static final UUID STUDENT_ID = UUID.fromString("27fdd7d8-3972-45b4-82cb-4056b59ec461");
@@ -63,10 +68,11 @@ class LessonMediaApiIntegrationTest {
     private static final UUID LESSON_ID = UUID.fromString("7c13978f-790b-4df4-9164-20c0af74c45b");
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("ai_learning_media_test")
-            .withUsername("test")
-            .withPassword("test");
+    static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>("postgres:17-alpine")
+                    .withDatabaseName("ai_learning_media_test")
+                    .withUsername("test")
+                    .withPassword("test");
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
@@ -75,80 +81,178 @@ class LessonMediaApiIntegrationTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
     }
 
-    @Autowired
-    MockMvc mockMvc;
+    @Autowired MockMvc mockMvc;
 
-    @Autowired
-    JwtEncoder jwtEncoder;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    @Autowired
-    SecurityProperties securityProperties;
+    @Autowired JwtEncoder jwtEncoder;
 
-    @Autowired
-    SecurityFilterChain securityFilterChain;
+    @Autowired SecurityProperties securityProperties;
 
-    @MockitoBean
-    LessonMediaStorage storage;
+    @Autowired SecurityFilterChain securityFilterChain;
+
+    @MockitoBean LessonMediaStorage storage;
 
     @Test
     void ownerInstructorUploadsLessonMedia() throws Exception {
         byte[] content = {1, 2, 3, 4};
         var file = new MockMultipartFile("file", "lesson.mp4", "video/mp4", content);
-        when(storage.store(anyString(), anyString(), anyLong(), any())).thenAnswer(invocation ->
-                new LessonMediaAsset(invocation.getArgument(0), "video/mp4", content.length, "new-etag"));
+        when(storage.store(anyString(), anyString(), anyLong(), any()))
+                .thenAnswer(
+                        invocation ->
+                                new LessonMediaAsset(
+                                        invocation.getArgument(0),
+                                        "video/mp4",
+                                        content.length,
+                                        "new-etag"));
 
-        mockMvc.perform(multipart("/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media", LESSON_ID)
-                        .file(file)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        })
-                        .with(jwt().jwt(token -> token
-                                        .subject(OWNER_ID.toString())
-                                        .claim("roles", List.of("INSTRUCTOR")))
-                                .authorities(new SimpleGrantedAuthority("ROLE_INSTRUCTOR"))))
+        mockMvc.perform(
+                        multipart(
+                                        "/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media",
+                                        LESSON_ID)
+                                .file(file)
+                                .with(
+                                        request -> {
+                                            request.setMethod("PUT");
+                                            return request;
+                                        })
+                                .with(
+                                        jwt().jwt(
+                                                        token ->
+                                                                token.subject(OWNER_ID.toString())
+                                                                        .claim(
+                                                                                "roles",
+                                                                                List.of(
+                                                                                        "INSTRUCTOR")))
+                                                .authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_INSTRUCTOR"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.contentType").value("video/mp4"))
                 .andExpect(jsonPath("$.sizeBytes").value(content.length))
-                .andExpect(jsonPath("$.contentUrl").value(
-                        "/api/v1/media/courses/media-delivery-test/lessons/" + LESSON_ID
-                ));
+                .andExpect(
+                        jsonPath("$.contentUrl")
+                                .value(
+                                        "/api/v1/media/courses/media-delivery-test/lessons/"
+                                                + LESSON_ID));
     }
 
     @Test
     void studentCannotUploadLessonMedia() throws Exception {
-        var file = new MockMultipartFile("file", "lesson.mp4", "video/mp4", new byte[]{1});
+        var file = new MockMultipartFile("file", "lesson.mp4", "video/mp4", new byte[] {1});
 
-        mockMvc.perform(multipart("/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media", LESSON_ID)
-                        .file(file)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        })
-                        .with(jwt().jwt(token -> token
-                                        .subject(STUDENT_ID.toString())
-                                        .claim("roles", List.of("STUDENT")))
-                                .authorities(new SimpleGrantedAuthority("ROLE_STUDENT"))))
+        mockMvc.perform(
+                        multipart(
+                                        "/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media",
+                                        LESSON_ID)
+                                .file(file)
+                                .with(
+                                        request -> {
+                                            request.setMethod("PUT");
+                                            return request;
+                                        })
+                                .with(
+                                        jwt().jwt(
+                                                        token ->
+                                                                token.subject(STUDENT_ID.toString())
+                                                                        .claim(
+                                                                                "roles",
+                                                                                List.of("STUDENT")))
+                                                .authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_STUDENT"))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void revokedInstructorRoleCannotUploadWithAnOldToken() throws Exception {
+        jdbc.update("DELETE FROM user_roles WHERE user_id=?", OWNER_ID);
+        var file = new MockMultipartFile("file", "lesson.webm", "video/webm", new byte[] {1});
+        mockMvc.perform(
+                        multipart(
+                                        "/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media",
+                                        LESSON_ID)
+                                .file(file)
+                                .with(
+                                        request -> {
+                                            request.setMethod("PUT");
+                                            return request;
+                                        })
+                                .with(
+                                        jwt().jwt(
+                                                        token ->
+                                                                token.subject(OWNER_ID.toString())
+                                                                        .claim(
+                                                                                "roles",
+                                                                                List.of(
+                                                                                        "INSTRUCTOR")))
+                                                .authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_INSTRUCTOR"))))
+                .andExpect(status().isForbidden());
+        org.mockito.Mockito.verifyNoInteractions(storage);
+    }
+
+    @Test
+    void rejectsExactlyTenMillionBytesBeforeCallingStorage() throws Exception {
+        var file = new MockMultipartFile("file", "lesson.webm", "video/webm", new byte[10_000_000]);
+        mockMvc.perform(
+                        multipart(
+                                        "/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media",
+                                        LESSON_ID)
+                                .file(file)
+                                .with(
+                                        request -> {
+                                            request.setMethod("PUT");
+                                            return request;
+                                        })
+                                .with(
+                                        jwt().jwt(
+                                                        token ->
+                                                                token.subject(OWNER_ID.toString())
+                                                                        .claim(
+                                                                                "roles",
+                                                                                List.of(
+                                                                                        "INSTRUCTOR")))
+                                                .authorities(
+                                                        new SimpleGrantedAuthority(
+                                                                "ROLE_INSTRUCTOR"))))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(storage);
     }
 
     @Test
     void administratorCanUploadMediaForAnotherInstructorsCourse() throws Exception {
         byte[] content = {1, 2, 3, 4};
         var file = new MockMultipartFile("file", "lesson.webm", "video/webm", content);
-        when(storage.store(anyString(), anyString(), anyLong(), any())).thenAnswer(invocation ->
-                new LessonMediaAsset(invocation.getArgument(0), "video/webm", content.length, "admin-etag"));
+        when(storage.store(anyString(), anyString(), anyLong(), any()))
+                .thenAnswer(
+                        invocation ->
+                                new LessonMediaAsset(
+                                        invocation.getArgument(0),
+                                        "video/webm",
+                                        content.length,
+                                        "admin-etag"));
 
-        mockMvc.perform(multipart("/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media", LESSON_ID)
-                        .file(file)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        })
-                        .with(jwt().jwt(token -> token
-                                        .subject(ADMIN_ID.toString())
-                                        .claim("roles", List.of("ADMIN")))
-                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+        mockMvc.perform(
+                        multipart(
+                                        "/api/v1/instructor/courses/media-delivery-test/lessons/{lessonId}/media",
+                                        LESSON_ID)
+                                .file(file)
+                                .with(
+                                        request -> {
+                                            request.setMethod("PUT");
+                                            return request;
+                                        })
+                                .with(
+                                        jwt().jwt(
+                                                        token ->
+                                                                token.subject(ADMIN_ID.toString())
+                                                                        .claim(
+                                                                                "roles",
+                                                                                List.of("ADMIN")))
+                                                .authorities(
+                                                        new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.contentType").value("video/webm"));
     }
@@ -156,65 +260,70 @@ class LessonMediaApiIntegrationTest {
     @Test
     void enrolledStudentStreamsRequestedRangeWithMediaCookie() throws Exception {
         when(storage.open("courses/course/lessons/lesson/existing", 2, 4))
-                .thenReturn(new ByteArrayInputStream("2345".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                .thenReturn(
+                        new ByteArrayInputStream(
+                                "2345".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
 
-        MvcResult result = mockMvc.perform(get(
-                                "/api/v1/media/courses/media-delivery-test/lessons/{lessonId}",
-                                LESSON_ID
-                        )
-                        .header(HttpHeaders.RANGE, "bytes=2-5")
-                        .cookie(new Cookie("media_access", mediaAccessToken())))
-                .andExpect(request().asyncStarted())
-                .andReturn();
+        MvcResult result =
+                mockMvc.perform(
+                                get(
+                                                "/api/v1/media/courses/media-delivery-test/lessons/{lessonId}",
+                                                LESSON_ID)
+                                        .header(HttpHeaders.RANGE, "bytes=2-5")
+                                        .cookie(new Cookie("media_access", mediaAccessToken())))
+                        .andExpect(request().asyncStarted())
+                        .andReturn();
 
         mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isPartialContent())
                 .andExpect(header().string(HttpHeaders.ACCEPT_RANGES, "bytes"))
                 .andExpect(header().string(HttpHeaders.CONTENT_RANGE, "bytes 2-5/10"))
                 .andExpect(header().longValue(HttpHeaders.CONTENT_LENGTH, 4))
-                .andExpect(content().bytes("2345".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                .andExpect(
+                        content().bytes("2345".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 
     @Test
     void securityHeadersAreWrittenBeforeAsynchronousMediaProcessingStarts() throws Exception {
-        HeaderWriterFilter headerWriterFilter = securityFilterChain.getFilters().stream()
-                .filter(HeaderWriterFilter.class::isInstance)
-                .map(HeaderWriterFilter.class::cast)
-                .findFirst()
-                .orElseThrow();
-        var request = new MockHttpServletRequest(
-                "GET",
-                "/api/v1/media/courses/media-delivery-test/lessons/" + LESSON_ID
-        );
+        HeaderWriterFilter headerWriterFilter =
+                securityFilterChain.getFilters().stream()
+                        .filter(HeaderWriterFilter.class::isInstance)
+                        .map(HeaderWriterFilter.class::cast)
+                        .findFirst()
+                        .orElseThrow();
+        var request =
+                new MockHttpServletRequest(
+                        "GET", "/api/v1/media/courses/media-delivery-test/lessons/" + LESSON_ID);
         var response = new DownstreamLifecycleResponse();
 
-        headerWriterFilter.doFilter(request, response, (ignoredRequest, ignoredResponse) ->
-                response.markDownstreamStarted());
+        headerWriterFilter.doFilter(
+                request,
+                response,
+                (ignoredRequest, ignoredResponse) -> response.markDownstreamStarted());
 
-        assertThat(response.getHeader("X-Content-Type-Options"))
-                .isEqualTo("nosniff");
-        assertThat(response.getHeader("X-Frame-Options"))
-                .isEqualTo("DENY");
+        assertThat(response.getHeader("X-Content-Type-Options")).isEqualTo("nosniff");
+        assertThat(response.getHeader("X-Frame-Options")).isEqualTo("DENY");
     }
 
     @Test
     void anonymousUserCannotStreamLessonMedia() throws Exception {
-        mockMvc.perform(get(
-                        "/api/v1/media/courses/media-delivery-test/lessons/{lessonId}",
-                        LESSON_ID
-                ))
+        mockMvc.perform(
+                        get(
+                                "/api/v1/media/courses/media-delivery-test/lessons/{lessonId}",
+                                LESSON_ID))
                 .andExpect(status().isUnauthorized());
     }
 
     private String mediaAccessToken() {
         Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(securityProperties.issuer())
-                .issuedAt(now)
-                .expiresAt(now.plusSeconds(300))
-                .subject(STUDENT_ID.toString())
-                .claim("roles", List.of("STUDENT"))
-                .build();
+        JwtClaimsSet claims =
+                JwtClaimsSet.builder()
+                        .issuer(securityProperties.issuer())
+                        .issuedAt(now)
+                        .expiresAt(now.plusSeconds(300))
+                        .subject(STUDENT_ID.toString())
+                        .claim("roles", List.of("STUDENT"))
+                        .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
@@ -240,7 +349,8 @@ class LessonMediaApiIntegrationTest {
 
         private void rejectLateHeader(String name) {
             if (downstreamStarted) {
-                throw new IllegalStateException("Header written after downstream processing started: " + name);
+                throw new IllegalStateException(
+                        "Header written after downstream processing started: " + name);
             }
         }
     }

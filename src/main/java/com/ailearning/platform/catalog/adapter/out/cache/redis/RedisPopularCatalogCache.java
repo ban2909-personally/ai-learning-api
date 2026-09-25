@@ -6,8 +6,10 @@ import com.ailearning.platform.catalog.domain.model.Course;
 import com.ailearning.platform.sharedkernel.pagination.PageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -36,8 +38,7 @@ public class RedisPopularCatalogCache implements PopularCatalogCache {
             StringRedisTemplate redis,
             ObjectMapper objectMapper,
             PopularCatalogCacheProperties properties,
-            MeterRegistry meterRegistry
-    ) {
+            MeterRegistry meterRegistry) {
         this.redis = redis;
         this.objectMapper = objectMapper;
         this.properties = properties;
@@ -88,6 +89,17 @@ public class RedisPopularCatalogCache implements PopularCatalogCache {
         return properties.keyPrefix() + ":size:" + pageSize;
     }
 
+    @Override
+    public void evictPublishedPages() {
+        try {
+            // CatalogQueryValidator bounds page size to 1..50; never scan unrelated Redis keys.
+            redis.delete(
+                    java.util.stream.IntStream.rangeClosed(1, 50).mapToObj(this::key).toList());
+        } catch (DataAccessException exception) {
+            reportFailure("invalidate", exception);
+        }
+    }
+
     private Counter counter(MeterRegistry registry, String result) {
         return Counter.builder("catalog.cache.access")
                 .description("Popular catalog cache access outcomes")
@@ -111,27 +123,20 @@ public class RedisPopularCatalogCache implements PopularCatalogCache {
             LOGGER.warn(
                     "Popular catalog cache {} failed; continuing with PostgreSQL: {}",
                     operation,
-                    exception.getMessage()
-            );
+                    exception.getMessage());
             LOGGER.debug("Popular catalog cache failure details", exception);
         }
     }
 
     private record CachedPage(
-            List<Course> content,
-            int page,
-            int size,
-            long totalElements,
-            int totalPages
-    ) {
+            List<Course> content, int page, int size, long totalElements, int totalPages) {
         private static CachedPage from(PageResult<Course> source) {
             return new CachedPage(
                     source.content(),
                     source.page(),
                     source.size(),
                     source.totalElements(),
-                    source.totalPages()
-            );
+                    source.totalPages());
         }
 
         private PageResult<Course> toPageResult() {

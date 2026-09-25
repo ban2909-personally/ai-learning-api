@@ -9,4 +9,6 @@ public interface PopularCatalogCache {
     Optional<PageResult<Course>> find(int pageSize);
 
     void put(int pageSize, PageResult<Course> page);
+
+    void evictPublishedPages();
 }

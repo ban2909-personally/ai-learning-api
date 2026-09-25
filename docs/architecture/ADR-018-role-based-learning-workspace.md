@@ -46,7 +46,7 @@ The existing programming-learning domain remains; reference branding and persona
 - [x] Verify real browser login for each role and mobile viewport.
 - [x] Verify course-creation form and flashcard study interactions in a real browser.
 - [x] Record implementation and test evidence in the development report.
-- [ ] Commit/push feature branch, then merge and push main after final review.
+- [x] Commit/push feature branch, then merge and push main after final review and green CI.
 
 ## Preview inventory
 

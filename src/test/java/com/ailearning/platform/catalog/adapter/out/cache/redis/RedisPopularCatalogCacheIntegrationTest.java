@@ -1,12 +1,16 @@
 package com.ailearning.platform.catalog.adapter.out.cache.redis;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.ailearning.platform.catalog.config.PopularCatalogCacheProperties;
 import com.ailearning.platform.catalog.domain.enums.CourseLevel;
 import com.ailearning.platform.catalog.domain.model.Category;
 import com.ailearning.platform.catalog.domain.model.Course;
 import com.ailearning.platform.sharedkernel.pagination.PageResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -24,15 +28,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @Testcontainers(disabledWithoutDocker = true)
 class RedisPopularCatalogCacheIntegrationTest {
     private static final String KEY_PREFIX = "test:catalog:popular:v1";
 
     @Container
-    static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.4-alpine"))
-            .withExposedPorts(6379);
+    static final GenericContainer<?> REDIS =
+            new GenericContainer<>(DockerImageName.parse("redis:7.4-alpine"))
+                    .withExposedPorts(6379);
 
     private static LettuceConnectionFactory connectionFactory;
     private static StringRedisTemplate redis;
@@ -41,18 +44,19 @@ class RedisPopularCatalogCacheIntegrationTest {
 
     @BeforeAll
     static void setUpClient() {
-        connectionFactory = new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(6379));
+        connectionFactory =
+                new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(6379));
         connectionFactory.afterPropertiesSet();
         redis = new StringRedisTemplate(connectionFactory);
         redis.afterPropertiesSet();
         ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
         meterRegistry = new SimpleMeterRegistry();
-        cache = new RedisPopularCatalogCache(
-                redis,
-                objectMapper,
-                new PopularCatalogCacheProperties(KEY_PREFIX, Duration.ofSeconds(30)),
-                meterRegistry
-        );
+        cache =
+                new RedisPopularCatalogCache(
+                        redis,
+                        objectMapper,
+                        new PopularCatalogCacheProperties(KEY_PREFIX, Duration.ofSeconds(30)),
+                        meterRegistry);
     }
 
     @AfterAll
@@ -95,30 +99,41 @@ class RedisPopularCatalogCacheIntegrationTest {
         return meterRegistry.get("catalog.cache.access").tag("result", result).counter().count();
     }
 
+    @Test
+    void invalidatesOnlyCatalogPagesAfterPublication() {
+        cache.put(3, page());
+        cache.put(12, page());
+        redis.opsForValue().set("test:other-module", "keep");
+        cache.evictPublishedPages();
+        assertThat(cache.find(3)).isEmpty();
+        assertThat(cache.find(12)).isEmpty();
+        assertThat(redis.opsForValue().get("test:other-module")).isEqualTo("keep");
+    }
+
     private static PageResult<Course> page() {
-        Category category = new Category(
-                UUID.fromString("7b0ca183-3f1f-4aa2-a280-e9e3bacf70ee"),
-                "backend",
-                "Backend",
-                "Backend courses"
-        );
-        Course course = new Course(
-                UUID.fromString("0978ff6c-d7b7-4bf5-a37c-bb6f4a99909d"),
-                "spring-clean",
-                "Spring Clean Architecture",
-                "Build maintainable APIs",
-                "Course description",
-                CourseLevel.INTERMEDIATE,
-                "vi",
-                new BigDecimal("499000"),
-                "VND",
-                null,
-                600,
-                category,
-                UUID.fromString("2503b194-e348-44a8-97dd-7814647552ca"),
-                "Instructor",
-                Instant.parse("2026-09-03T00:00:00Z")
-        );
+        Category category =
+                new Category(
+                        UUID.fromString("7b0ca183-3f1f-4aa2-a280-e9e3bacf70ee"),
+                        "backend",
+                        "Backend",
+                        "Backend courses");
+        Course course =
+                new Course(
+                        UUID.fromString("0978ff6c-d7b7-4bf5-a37c-bb6f4a99909d"),
+                        "spring-clean",
+                        "Spring Clean Architecture",
+                        "Build maintainable APIs",
+                        "Course description",
+                        CourseLevel.INTERMEDIATE,
+                        "vi",
+                        new BigDecimal("499000"),
+                        "VND",
+                        null,
+                        600,
+                        category,
+                        UUID.fromString("2503b194-e348-44a8-97dd-7814647552ca"),
+                        "Instructor",
+                        Instant.parse("2026-09-03T00:00:00Z"));
         return new PageResult<>(List.of(course), 0, 12, 1, 1);
     }
 }

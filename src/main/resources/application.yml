@@ -39,8 +39,8 @@ spring:
         max.block.ms: ${LEARNING_EVENTS_KAFKA_MAX_BLOCK_MS:10000}
   servlet:
     multipart:
-      max-file-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
-      max-request-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
+      max-file-size: ${MEDIA_MAX_UPLOAD_SIZE:9999999B}
+      max-request-size: 11MB
 
 server:
   port: ${SERVER_PORT:8080}
@@ -75,7 +75,7 @@ app:
   cors:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
   media:
-    max-upload-size: ${MEDIA_MAX_UPLOAD_SIZE:2GB}
+    max-upload-size: ${MEDIA_MAX_UPLOAD_SIZE:9999999B}
     allowed-content-types:
       - video/mp4
       - video/webm

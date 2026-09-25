@@ -1,20 +1,19 @@
 package com.ailearning.platform.catalog.domain.policy;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.ailearning.platform.sharedkernel.error.BusinessException;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class LessonMediaPolicyTest {
-    private final LessonMediaPolicy policy = new LessonMediaPolicy(
-            1_024,
-            Set.of("video/mp4", "video/webm")
-    );
+    private final LessonMediaPolicy policy =
+            new LessonMediaPolicy(1_024, Set.of("video/mp4", "video/webm"));
 
     @Test
     void permitsOwnerAndAdministrator() {
@@ -26,8 +25,10 @@ class LessonMediaPolicyTest {
 
     @Test
     void rejectsAnotherInstructor() {
-        BusinessException error = assertThrows(BusinessException.class, () ->
-                policy.ensureCanManage(UUID.randomUUID(), false, UUID.randomUUID()));
+        BusinessException error =
+                assertThrows(
+                        BusinessException.class,
+                        () -> policy.ensureCanManage(UUID.randomUUID(), false, UUID.randomUUID()));
 
         assertEquals("course_management_denied", error.code());
     }
@@ -35,16 +36,35 @@ class LessonMediaPolicyTest {
     @Test
     void validatesSizeAndNormalizesContentType() {
         assertEquals("video/mp4", policy.validateUpload("VIDEO/MP4", 1_024));
-        assertEquals("empty_media_file", assertThrows(BusinessException.class, () ->
-                policy.validateUpload("video/mp4", 0)).code());
-        assertEquals("media_file_too_large", assertThrows(BusinessException.class, () ->
-                policy.validateUpload("video/mp4", 1_025)).code());
+        assertEquals(
+                "empty_media_file",
+                assertThrows(BusinessException.class, () -> policy.validateUpload("video/mp4", 0))
+                        .code());
+        assertEquals(
+                "media_file_too_large",
+                assertThrows(
+                                BusinessException.class,
+                                () -> policy.validateUpload("video/mp4", 1_025))
+                        .code());
+    }
+
+    @Test
+    void enforcesStrictTenMegabyteCeilingEvenWithLargerConfiguration() {
+        var uploadPolicy = new LessonMediaPolicy(Long.MAX_VALUE, Set.of("video/mp4"));
+        assertDoesNotThrow(() -> uploadPolicy.validateUpload("video/mp4", 9_999_999));
+        assertThrows(
+                BusinessException.class,
+                () -> uploadPolicy.validateUpload("video/mp4", 10_000_000));
+        assertThrows(
+                BusinessException.class,
+                () -> uploadPolicy.validateUpload("video/mp4", 10_000_001));
     }
 
     @Test
     void rejectsUnsupportedContentType() {
-        BusinessException error = assertThrows(BusinessException.class, () ->
-                policy.validateUpload("text/html", 100));
+        BusinessException error =
+                assertThrows(
+                        BusinessException.class, () -> policy.validateUpload("text/html", 100));
 
         assertEquals("unsupported_media_type", error.code());
     }

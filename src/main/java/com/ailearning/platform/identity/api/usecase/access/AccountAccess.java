@@ -2,8 +2,11 @@ package com.ailearning.platform.identity.api.usecase.access;
 
 import com.ailearning.platform.identity.api.contract.UserView;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface AccountAccess {
     UserView requireActive(UUID userId);
+
+    Optional<UserView> findActiveByEmail(String email);
 }

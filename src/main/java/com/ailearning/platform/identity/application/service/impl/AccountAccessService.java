@@ -6,6 +6,8 @@ import com.ailearning.platform.identity.application.port.out.UserStore;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
 
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 public class AccountAccessService implements AccountAccess {
@@ -27,5 +29,15 @@ public class AccountAccessService implements AccountAccess {
                                                 ErrorType.FORBIDDEN,
                                                 "Tài khoản không tồn tại hoặc đã bị vô hiệu hóa."));
         return new UserView(user.id(), user.email(), user.displayName(), user.roles());
+    }
+
+    @Override
+    public Optional<UserView> findActiveByEmail(String email) {
+        return users.findByEmail(email.trim().toLowerCase(Locale.ROOT))
+                .filter(user -> user.active())
+                .map(
+                        user ->
+                                new UserView(
+                                        user.id(), user.email(), user.displayName(), user.roles()));
     }
 }

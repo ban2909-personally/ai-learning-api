@@ -82,6 +82,16 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                         .authenticated()
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/v1/community/feed",
+                                                "/api/v1/community/spaces",
+                                                "/api/v1/community/spaces/*",
+                                                "/api/v1/community/posts/*",
+                                                "/api/v1/community/posts/*/comments")
+                                        .permitAll()
+                                        .requestMatchers("/api/v1/community/**")
+                                        .authenticated()
                                         .requestMatchers("/api/v1/**")
                                         .hasAnyRole(
                                                 "STUDENT",

@@ -1,0 +1,54 @@
+package com.ailearning.platform.assessment.application.service.impl;
+
+import com.ailearning.platform.assessment.application.port.out.PracticeStore;
+import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
+import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
+import com.ailearning.platform.sharedkernel.error.BusinessException;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
+
+class PracticeServiceTest {
+    private final PracticeStore store = mock(PracticeStore.class);
+    private final AccountAccess access = mock(AccountAccess.class);
+    private final PracticeService service = new PracticeService(store, access);
+
+    @Test
+    void rejectsChoiceOutsidePublishedOptionsWithoutWritingToPort() {
+        UUID owner = UUID.randomUUID();
+        UUID attemptId = UUID.randomUUID();
+        UUID examId = UUID.randomUUID();
+        UUID questionId = UUID.randomUUID();
+        when(store.attempt(attemptId, owner)).thenReturn(Optional.of(
+                new PracticeAttempt(attemptId, examId, owner, "IN_PROGRESS", Map.of())));
+        when(store.publishedExam(examId)).thenReturn(Optional.of(new PracticeExam(
+                examId, "sample", "Sample", "", 10,
+                List.of(new PracticeExam.Section(UUID.randomUUID(), "READING", "Reading", "", null,
+                        List.of(new PracticeExam.Question(questionId, "CHOICE", "Prompt",
+                                List.of("A", "B"), "A", "")))))));
+
+        assertThatThrownBy(() -> service.answer(owner, attemptId, questionId, "injected option"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Đáp án không hợp lệ.");
+        verify(store, never()).saveAnswer(any(), any(), any(), any());
+    }
+
+    @Test
+    void refusesResultBeforeSubmission() {
+        UUID owner = UUID.randomUUID();
+        UUID attemptId = UUID.randomUUID();
+        when(store.attempt(attemptId, owner)).thenReturn(Optional.of(
+                new PracticeAttempt(attemptId, UUID.randomUUID(), owner, "IN_PROGRESS", Map.of())));
+
+        assertThatThrownBy(() -> service.result(owner, attemptId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Hãy nộp bài trước khi xem kết quả.");
+    }
+}

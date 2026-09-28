@@ -3,9 +3,15 @@ package com.ailearning.platform.assessment.adapter.in.web.controller;
 import com.ailearning.platform.assessment.api.usecase.PracticeUseCase;
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.WritingReview;
+import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 import com.ailearning.platform.assessment.domain.service.PracticeGrader;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -65,6 +71,21 @@ public class PracticeController {
         return practice.result(actor(jwt), id);
     }
 
+    @GetMapping("/reviews/pending")
+    List<WritingSubmission> pendingWriting(
+            @AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page) {
+        return practice.pendingWriting(actor(jwt), page);
+    }
+
+    @PutMapping("/attempts/{id}/writing/{questionId}/review")
+    WritingReview reviewWriting(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+                                @PathVariable UUID questionId,
+                                @Valid @RequestBody WritingReviewRequest request) {
+        return practice.reviewWriting(actor(jwt), id, questionId,
+                request.taskScore(), request.coherenceScore(), request.vocabularyScore(),
+                request.grammarScore(), request.feedback());
+    }
+
     private static UUID actor(Jwt jwt) {
         return UUID.fromString(jwt.getSubject());
     }
@@ -92,4 +113,10 @@ public class PracticeController {
     record AttemptView(UUID id, String status, Map<UUID, String> answers, ExamView exam) {}
 
     record AnswerRequest(@NotNull String answer) {}
+
+    record WritingReviewRequest(@NotNull @Min(0) @Max(5) Integer taskScore,
+                                @NotNull @Min(0) @Max(5) Integer coherenceScore,
+                                @NotNull @Min(0) @Max(5) Integer vocabularyScore,
+                                @NotNull @Min(0) @Max(5) Integer grammarScore,
+                                @NotBlank @Size(max = 2000) String feedback) {}
 }

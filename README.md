@@ -1,6 +1,6 @@
 # AI Learning Platform API
 
-Spring Boot backend for the B2C AI Learning Platform.
+Spring Boot backend for the English learning, community and practice assessment platform.
 
 ## Stack
 
@@ -67,11 +67,16 @@ shutdown behavior, and local validation commands are documented in
 ## Architecture
 
 The backend is a Spring Modulith modular monolith with `identity`, `catalog`, `learning`, `mentoring`,
-`notification`, `analytics`, `commerce`, and `organization` bounded contexts. Business modules use hexagonal ports and adapters; domain/application
+`notification`, `analytics`, `commerce`, `organization`, `flashcard`, `community`, and `assessment` bounded contexts. Business modules use hexagonal ports and adapters; domain/application
 code is protected by ArchUnit and cross-module access is restricted to named Modulith interfaces.
 Technical configuration, security, and web error handling live under `platform`; `sharedkernel`
 contains only minimal, framework-free semantics. See
 `docs/architecture/ADR-001-modular-monolith-and-hexagonal-modules.md`.
+
+English practice supports Listening, Reading and Writing, with objective answer review and a separate
+human Writing rubric. Speaking is out of scope; practice results are not official TOEIC or IELTS scores.
+See `docs/architecture/ADR-020-english-assessment.md` and
+`docs/reports/english-exam-practice-2026-09-27.md` for the current implementation and limitations.
 
 Learning integration events use a transactional PostgreSQL outbox and optional Kafka dispatcher. Kafka
 is disabled by default, so local progress writes do not require a broker. See

@@ -45,20 +45,23 @@ class PracticeApiIntegrationTest {
 
     private final UUID student = UUID.fromString("41000000-0000-0000-0000-000000000001");
     private final UUID other = UUID.fromString("41000000-0000-0000-0000-000000000002");
+    private final UUID lecturer = UUID.fromString("41000000-0000-0000-0000-000000000003");
 
     @BeforeEach
     void users() {
         jdbc.execute("TRUNCATE users CASCADE");
-        for (UUID id : new UUID[]{student, other}) {
+        for (UUID id : new UUID[]{student, other, lecturer}) {
             jdbc.update("INSERT INTO users(id,email,password_hash,display_name,status) VALUES"
                     + " (?,?,?,'Student','ACTIVE')", id, id + "@example.invalid", "unused");
-            jdbc.update("INSERT INTO user_roles(user_id,role_id) SELECT ?,id FROM roles WHERE code='STUDENT'", id);
+            jdbc.update("INSERT INTO user_roles(user_id,role_id) SELECT ?,id FROM roles WHERE code=?",
+                    id, id.equals(lecturer) ? "LECTURE" : "STUDENT");
         }
     }
 
     private RequestPostProcessor as(UUID id) {
         return jwt().jwt(token -> token.subject(id.toString()))
-                .authorities(new SimpleGrantedAuthority("ROLE_STUDENT"));
+                .authorities(new SimpleGrantedAuthority(id.equals(lecturer)
+                        ? "ROLE_LECTURE" : "ROLE_STUDENT"));
     }
 
     @Test
@@ -103,6 +106,58 @@ class PracticeApiIntegrationTest {
         mvc.perform(put("/api/v1/practice/attempts/" + attemptId + "/answers/" + choiceId)
                         .with(as(student)).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"answer\":\"Monday at 9:30\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void onlyReviewerCanGradeSubmittedWritingAndStudentSeesRubric() throws Exception {
+        String response = mvc.perform(post("/api/v1/practice/exams/english-workplace-starter/attempts")
+                        .with(as(student)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String attemptId = JsonPath.read(response, "$.id");
+        String writingId = "33333333-3333-4333-8333-333333333335";
+        mvc.perform(put("/api/v1/practice/attempts/" + attemptId + "/answers/" + writingId)
+                        .with(as(student)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"answer\":\"I suggest a workshop about clear workplace emails.\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/practice/attempts/" + attemptId + "/submit").with(as(student)))
+                .andExpect(status().isOk());
+
+        String ownResponse = mvc.perform(post("/api/v1/practice/exams/english-workplace-starter/attempts")
+                        .with(as(lecturer)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String ownAttemptId = JsonPath.read(ownResponse, "$.id");
+        mvc.perform(put("/api/v1/practice/attempts/" + ownAttemptId + "/answers/" + writingId)
+                        .with(as(lecturer)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"answer\":\"My own writing answer.\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/practice/attempts/" + ownAttemptId + "/submit")
+                        .with(as(lecturer)))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/practice/reviews/pending").with(as(student)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/practice/reviews/pending").with(as(lecturer)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].attemptId").value(attemptId));
+        String review = """
+                {"taskScore":4,"coherenceScore":3,"vocabularyScore":4,
+                 "grammarScore":5,"feedback":"Clear purpose; improve transitions."}
+                """;
+        mvc.perform(put("/api/v1/practice/attempts/" + attemptId + "/writing/" + writingId + "/review")
+                        .with(as(student)).contentType(MediaType.APPLICATION_JSON).content(review))
+                .andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/practice/attempts/" + attemptId + "/writing/" + writingId + "/review")
+                        .with(as(lecturer)).contentType(MediaType.APPLICATION_JSON).content(review))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.feedback").value("Clear purpose; improve transitions."));
+        mvc.perform(get("/api/v1/practice/attempts/" + attemptId + "/result").with(as(student)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sections[2].questions[0].status").value("REVIEWED"))
+                .andExpect(jsonPath("$.sections[2].questions[0].writingFeedback.totalScore").value(16));
+        mvc.perform(put("/api/v1/practice/attempts/" + attemptId + "/writing/" + writingId + "/review")
+                        .with(as(lecturer)).contentType(MediaType.APPLICATION_JSON).content(review))
                 .andExpect(status().isConflict());
     }
 }

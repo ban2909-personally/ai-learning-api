@@ -2,6 +2,7 @@ package com.ailearning.platform.assessment.domain.service;
 
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.WritingReview;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -26,12 +27,20 @@ class PracticeGraderTest {
         PracticeAttempt attempt = new PracticeAttempt(UUID.randomUUID(), exam.id(), UUID.randomUUID(),
                 "SUBMITTED", Map.of(choiceId, " yes ", writingId, "An original response."));
 
-        var result = PracticeGrader.grade(exam, attempt);
+        var result = PracticeGrader.grade(exam, attempt, Map.of());
 
         assertThat(result.correct()).isEqualTo(1);
         assertThat(result.total()).isEqualTo(1);
         assertThat(result.sections().get(1).questions().getFirst().status())
                 .isEqualTo("PENDING_REVIEW");
         assertThat(result.sections().get(1).questions().getFirst().correct()).isNull();
+
+        var reviewed = PracticeGrader.grade(exam, attempt, Map.of(writingId,
+                new WritingReview(attempt.id(), writingId, UUID.randomUUID(),
+                        4, 3, 5, 4, "Clear idea; strengthen transitions.")));
+        assertThat(reviewed.sections().get(1).questions().getFirst().status()).isEqualTo("REVIEWED");
+        assertThat(reviewed.sections().get(1).questions().getFirst().writingFeedback().totalScore())
+                .isEqualTo(16);
+        assertThat(reviewed.total()).isEqualTo(1);
     }
 }

@@ -2,19 +2,22 @@ package com.ailearning.platform.assessment.domain.service;
 
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.WritingReview;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public final class PracticeGrader {
     private PracticeGrader() {}
 
-    public static Result grade(PracticeExam exam, PracticeAttempt attempt) {
+    public static Result grade(
+            PracticeExam exam, PracticeAttempt attempt, Map<UUID, WritingReview> reviews) {
         List<SectionResult> sections = exam.sections().stream()
                 .map(section -> {
                     List<QuestionResult> questions = section.questions().stream()
-                            .map(question -> gradeQuestion(question, attempt))
+                            .map(question -> gradeQuestion(question, attempt, reviews))
                             .toList();
                     return new SectionResult(section.skill(), section.title(),
                             (int) questions.stream().filter(q -> Boolean.TRUE.equals(q.correct())).count(),
@@ -27,16 +30,21 @@ public final class PracticeGrader {
     }
 
     private static QuestionResult gradeQuestion(
-            PracticeExam.Question question, PracticeAttempt attempt) {
+            PracticeExam.Question question, PracticeAttempt attempt,
+            Map<UUID, WritingReview> reviews) {
         String answer = attempt.answers().getOrDefault(question.id(), "");
         if ("WRITING".equals(question.kind())) {
+            WritingReview review = reviews.get(question.id());
             return new QuestionResult(question.id(), answer, null, null, null,
-                    answer.isBlank() ? "UNANSWERED" : "PENDING_REVIEW");
+                    answer.isBlank() ? "UNANSWERED" : review == null ? "PENDING_REVIEW" : "REVIEWED",
+                    review == null ? null : new WritingFeedback(review.taskScore(),
+                            review.coherenceScore(), review.vocabularyScore(),
+                            review.grammarScore(), review.totalScore(), review.feedback()));
         }
         boolean correct = normalize(answer).equals(normalize(question.correctAnswer()))
                 && !answer.isBlank();
         return new QuestionResult(question.id(), answer, correct,
-                question.correctAnswer(), question.explanation(), "GRADED");
+                question.correctAnswer(), question.explanation(), "GRADED", null);
     }
 
     private static String normalize(String value) {
@@ -51,5 +59,9 @@ public final class PracticeGrader {
                                 List<QuestionResult> questions) {}
 
     public record QuestionResult(UUID questionId, String answer, Boolean correct,
-                                 String correctAnswer, String explanation, String status) {}
+                                 String correctAnswer, String explanation, String status,
+                                 WritingFeedback writingFeedback) {}
+
+    public record WritingFeedback(int taskScore, int coherenceScore, int vocabularyScore,
+                                  int grammarScore, int totalScore, String feedback) {}
 }

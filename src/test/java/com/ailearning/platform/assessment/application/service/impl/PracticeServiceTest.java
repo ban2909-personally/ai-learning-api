@@ -3,6 +3,7 @@ package com.ailearning.platform.assessment.application.service.impl;
 import com.ailearning.platform.assessment.application.port.out.PracticeStore;
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.identity.api.contract.UserView;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,5 +52,23 @@ class PracticeServiceTest {
         assertThatThrownBy(() -> service.result(owner, attemptId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Hãy nộp bài trước khi xem kết quả.");
+    }
+
+    @Test
+    void lecturerCannotReviewOwnWriting() {
+        UUID lecturer = UUID.randomUUID();
+        UUID attemptId = UUID.randomUUID();
+        UUID questionId = UUID.randomUUID();
+        when(access.requireActive(lecturer)).thenReturn(new UserView(
+                lecturer, "teacher@example.invalid", "Teacher", Set.of("LECTURE")));
+        when(store.attempt(attemptId, lecturer)).thenReturn(Optional.of(
+                new PracticeAttempt(attemptId, UUID.randomUUID(), lecturer,
+                        "SUBMITTED", Map.of(questionId, "My answer"))));
+
+        assertThatThrownBy(() -> service.reviewWriting(lecturer, attemptId, questionId,
+                4, 4, 4, 4, "Good work"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Không thể tự chấm bài của mình.");
+        verify(store, never()).reviewWriting(any());
     }
 }

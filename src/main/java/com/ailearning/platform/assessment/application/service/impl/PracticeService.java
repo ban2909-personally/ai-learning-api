@@ -4,15 +4,19 @@ import com.ailearning.platform.assessment.api.usecase.PracticeUseCase;
 import com.ailearning.platform.assessment.application.port.out.PracticeStore;
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.WritingReview;
+import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 import com.ailearning.platform.assessment.domain.service.PracticeGrader;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class PracticeService implements PracticeUseCase {
+    private static final Set<String> REVIEWER_ROLES = Set.of("LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
     private final PracticeStore store;
     private final AccountAccess access;
 
@@ -84,7 +88,51 @@ public class PracticeService implements PracticeUseCase {
                     "Hãy nộp bài trước khi xem kết quả.");
         }
         PracticeExam exam = exam(attempt.examId());
-        return PracticeGrader.grade(exam, attempt);
+        return PracticeGrader.grade(exam, attempt, store.writingReviews(id));
+    }
+
+    public List<WritingSubmission> pendingWriting(UUID reviewer, int page) {
+        requireReviewer(reviewer);
+        if (page < 0 || page > 10000) {
+            throw new BusinessException("invalid_review_page", ErrorType.BAD_REQUEST,
+                    "Trang danh sách không hợp lệ.");
+        }
+        return store.pendingWriting(reviewer, page);
+    }
+
+    public WritingReview reviewWriting(UUID reviewer, UUID attemptId, UUID questionId,
+                                       int taskScore, int coherenceScore, int vocabularyScore,
+                                       int grammarScore, String feedback) {
+        requireReviewer(reviewer);
+        if (store.attempt(attemptId, reviewer).isPresent()) {
+            throw new BusinessException("self_review_forbidden", ErrorType.FORBIDDEN,
+                    "Không thể tự chấm bài của mình.");
+        }
+        String comment = feedback == null ? "" : feedback.trim();
+        if (comment.isEmpty() || comment.length() > 2000
+                || !validScore(taskScore) || !validScore(coherenceScore)
+                || !validScore(vocabularyScore) || !validScore(grammarScore)) {
+            throw new BusinessException("invalid_writing_review", ErrorType.BAD_REQUEST,
+                    "Cần nhận xét và điểm từ 0 đến 5 cho mỗi tiêu chí.");
+        }
+        WritingReview review = new WritingReview(attemptId, questionId, reviewer,
+                taskScore, coherenceScore, vocabularyScore, grammarScore, comment);
+        if (!store.reviewWriting(review)) {
+            throw new BusinessException("writing_review_unavailable", ErrorType.CONFLICT,
+                    "Bài viết không chờ chấm hoặc đã có người chấm.");
+        }
+        return review;
+    }
+
+    private void requireReviewer(UUID actor) {
+        if (access.requireActive(actor).roles().stream().noneMatch(REVIEWER_ROLES::contains)) {
+            throw new BusinessException("writing_review_forbidden", ErrorType.FORBIDDEN,
+                    "Tài khoản không có quyền chấm bài viết.");
+        }
+    }
+
+    private static boolean validScore(int score) {
+        return score >= 0 && score <= 5;
     }
 
     private static BusinessException notFound(String message) {

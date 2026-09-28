@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public class PracticeService implements PracticeUseCase {
+    private static final Set<String> PARTICIPANT_ROLES = Set.of(
+            "STUDENT", "LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
     private static final Set<String> REVIEWER_ROLES = Set.of("LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
     private final PracticeStore store;
     private final AccountAccess access;
@@ -38,12 +40,12 @@ public class PracticeService implements PracticeUseCase {
     }
 
     public PracticeAttempt start(UUID actor, String slug) {
-        access.requireActive(actor);
+        requireParticipant(actor);
         return store.start(exam(slug).id(), actor);
     }
 
     public PracticeAttempt attempt(UUID actor, UUID id) {
-        access.requireActive(actor);
+        requireParticipant(actor);
         return store.attempt(id, actor).orElseThrow(() -> notFound("Không tìm thấy lượt làm bài."));
     }
 
@@ -122,6 +124,13 @@ public class PracticeService implements PracticeUseCase {
                     "Bài viết không chờ chấm hoặc đã có người chấm.");
         }
         return review;
+    }
+
+    private void requireParticipant(UUID actor) {
+        if (access.requireActive(actor).roles().stream().noneMatch(PARTICIPANT_ROLES::contains)) {
+            throw new BusinessException("practice_participation_forbidden", ErrorType.FORBIDDEN,
+                    "Tài khoản không có quyền làm bài luyện tập.");
+        }
     }
 
     private void requireReviewer(UUID actor) {

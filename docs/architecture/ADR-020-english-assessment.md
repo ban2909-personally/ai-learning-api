@@ -11,7 +11,7 @@ ETS treats TOEIC Listening & Reading separately from Speaking & Writing. We ther
 ## Decision
 
 - Add an `assessment` bounded context with its own exam, item, attempt and response tables. It exposes use cases and contracts; web and JDBC are adapters. No catalog/learning entity is shared or queried directly.
-- Published English practice exams are visible to guests. Starting/submitting an attempt requires an active authenticated account; an attempt belongs to exactly one user.
+- Published English practice exams are visible to guests. Starting/submitting an attempt requires an active authenticated student, lecturer/instructor, leader or admin; an attempt belongs to exactly one user. The HTTP role gate and the participant use case both enforce this; an authenticated GUEST account can only discover exams.
 - Listening and Reading items are objectively scored after submission. Answers and explanations are never returned in the take-exam payload. The result API returns only the owner’s submitted attempt.
 - Writing is a response to a prompt, persisted with status `PENDING_REVIEW`; it is not silently auto-scored. Active lecturers, instructors, leaders and admins can review another user's submitted answer once, assigning 0–5 to task response, coherence, vocabulary and grammar with required feedback. The 20-point total is a local practice rubric, separate from objective Listening/Reading counts. A combined official TOEIC/IELTS band is not calculated.
 - Media is a URL/reference from published content. A managed audio-upload workflow and integrity controls follow the existing MinIO adapter with the project’s sub-10 MB upload limit; arbitrary learner-supplied URLs are not accepted as answers.

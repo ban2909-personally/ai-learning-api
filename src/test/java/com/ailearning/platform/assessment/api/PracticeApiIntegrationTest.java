@@ -110,6 +110,20 @@ class PracticeApiIntegrationTest {
     }
 
     @Test
+    void authenticatedGuestCanDiscoverButCannotParticipateOrReview() throws Exception {
+        RequestPostProcessor guest = jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
+                .authorities(new SimpleGrantedAuthority("ROLE_GUEST"));
+        mvc.perform(get("/api/v1/practice/exams/english-workplace-starter").with(guest))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/practice/exams/english-workplace-starter/attempts").with(guest))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/practice/attempts/" + UUID.randomUUID()).with(guest))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/practice/reviews/pending").with(guest))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void onlyReviewerCanGradeSubmittedWritingAndStudentSeesRubric() throws Exception {
         String response = mvc.perform(post("/api/v1/practice/exams/english-workplace-starter/attempts")
                         .with(as(student)))

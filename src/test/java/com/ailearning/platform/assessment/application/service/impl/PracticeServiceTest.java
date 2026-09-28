@@ -25,6 +25,8 @@ class PracticeServiceTest {
     @Test
     void rejectsChoiceOutsidePublishedOptionsWithoutWritingToPort() {
         UUID owner = UUID.randomUUID();
+        when(access.requireActive(owner)).thenReturn(new UserView(
+                owner, "student@example.invalid", "Student", Set.of("STUDENT")));
         UUID attemptId = UUID.randomUUID();
         UUID examId = UUID.randomUUID();
         UUID questionId = UUID.randomUUID();
@@ -45,6 +47,8 @@ class PracticeServiceTest {
     @Test
     void refusesResultBeforeSubmission() {
         UUID owner = UUID.randomUUID();
+        when(access.requireActive(owner)).thenReturn(new UserView(
+                owner, "student@example.invalid", "Student", Set.of("STUDENT")));
         UUID attemptId = UUID.randomUUID();
         when(store.attempt(attemptId, owner)).thenReturn(Optional.of(
                 new PracticeAttempt(attemptId, UUID.randomUUID(), owner, "IN_PROGRESS", Map.of())));
@@ -70,5 +74,20 @@ class PracticeServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Không thể tự chấm bài của mình.");
         verify(store, never()).reviewWriting(any());
+    }
+
+    @Test
+    void guestCannotStartOrReadAttemptsThroughUseCase() {
+        UUID guest = UUID.randomUUID();
+        when(access.requireActive(guest)).thenReturn(new UserView(
+                guest, "guest@example.invalid", "Guest", Set.of("GUEST")));
+
+        assertThatThrownBy(() -> service.start(guest, "sample"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Tài khoản không có quyền làm bài luyện tập.");
+        assertThatThrownBy(() -> service.attempt(guest, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Tài khoản không có quyền làm bài luyện tập.");
+        verifyNoInteractions(store);
     }
 }

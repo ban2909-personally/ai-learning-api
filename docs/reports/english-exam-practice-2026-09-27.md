@@ -28,11 +28,12 @@
 
 ### Final local verification (2026-09-28)
 
-- Exact final backend `mvn verify`: 238 tests, 0 failures, 0 errors, 0 skipped; packaging and the coverage gate passed. An earlier packaging attempt failed because the running preview held the target JAR open, not because an assertion failed. The preview now runs a copy under `target/preview-runtime`.
+- Exact final backend `mvn verify`: 240 tests, 0 failures, 0 errors, 0 skipped; packaging and the coverage gate passed. An earlier packaging attempt failed because the running preview held the target JAR open, not because an assertion failed. The preview now runs a copy under `target/preview-runtime`.
 - Frontend build and all 47 tests (22 suites) passed. Selenium smoke passed at 320/768/1440 px, including the role-restricted Writing reviewer queue and rubric layout.
 - Preview health is UP and Flyway is at V17. Student submission `ed19cedf-9994-466a-a285-c8ef0fd00bc3` was reviewed through the frontend form as `lecture@demo.local`; the student browser result showed 16/20 and the persisted feedback. Objective score stayed 0/4.
 - Headless Chrome 154/WebDriver did not consistently dispatch pointer/keyboard input to the lower form. Acceptance used browser-native text insertion and validated `requestSubmit`, then a fresh student browser session. This proves form handling, persistence and owner feedback, but is not evidence of a complete pointer-only acceptance test. No application workaround or disabled validation was added.
 - Demo accounts and existing user/community/course data remain intact. The user's unrelated `performance/ai-mentor.js` remains uncommitted and excluded from this delivery.
+- Added explicit authenticated-GUEST HTTP regression coverage and participant-role validation at the use-case boundary. The existing shared HTTP matcher already restricted participation; no duplicate matcher was added. Guests discover exams but cannot start/read attempts or enter the review queue.
 
 ## Main changed files
 

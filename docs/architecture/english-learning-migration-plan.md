@@ -18,13 +18,15 @@ Product direction: English learning, practice and community. Preserve the modula
 - [x] Unit, Mockito port, PostgreSQL/Flyway, MockMvc/security, Modulith/ArchUnit and frontend/browser checks.
 - [x] Push feature branches, verify exact remote CI revisions, then merge and verify main (foundation and human review; report dated 2026-09-27).
 
-## 3. Next: content authoring and media
+## 3. Content authoring and media
 
-- [ ] Define author ownership, reviewer assignment and publication permissions before implementation.
-- [ ] Draft/edit/publish exam workflow, section order and question bank for Listening/Reading/Writing.
-- [ ] Preserve an immutable exam revision for each started attempt; edits must not change existing results.
+- [x] Define author ownership and publication permissions in ADR-021; new Writing review is author-scoped with leader/admin access.
+- [x] Draft/edit/submit/withdraw/publish/clone workflow and ordered section/question content for Listening/Reading/Writing.
+- [x] Preserve an immutable exam revision for each started attempt; edits must not change existing results.
+- [ ] Independent reusable question bank, richer filters/import and full-length exam content.
 - [ ] Managed MinIO audio references with sub-10 MB limits, validated media types and authenticated author permissions.
-- [ ] Original or properly licensed English material; no copied PREP questions or branding.
+- [x] Original preview mini-practice material; no copied PREP questions or branding.
+- [ ] Full-length original/licensed banks and an explicit content provenance process.
 
 ## 4. Exam integrity and feedback
 

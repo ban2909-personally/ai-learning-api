@@ -2,6 +2,7 @@ package com.ailearning.platform.assessment.application.port.out;
 
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.PracticeExamSummary;
 import com.ailearning.platform.assessment.domain.model.WritingReview;
 import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 
@@ -11,11 +12,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PracticeStore {
-    List<PracticeExam> publishedExams();
+    List<PracticeExamSummary> publishedExams();
 
     Optional<PracticeExam> publishedExam(String slug);
 
-    Optional<PracticeExam> publishedExam(UUID id);
+    Optional<PracticeExam> attemptExam(UUID id);
 
     PracticeAttempt start(UUID examId, UUID ownerId);
 
@@ -27,7 +28,7 @@ public interface PracticeStore {
 
     Map<UUID, WritingReview> writingReviews(UUID attemptId);
 
-    List<WritingSubmission> pendingWriting(UUID reviewer, int page);
+    List<WritingSubmission> pendingWriting(UUID reviewer, boolean globalReviewer, int page);
 
-    boolean reviewWriting(WritingReview review);
+    boolean reviewWriting(WritingReview review, boolean globalReviewer);
 }

@@ -4,6 +4,7 @@ import com.ailearning.platform.assessment.api.usecase.PracticeUseCase;
 import com.ailearning.platform.assessment.application.port.out.PracticeStore;
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.PracticeExamSummary;
 import com.ailearning.platform.assessment.domain.model.WritingReview;
 import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 import com.ailearning.platform.assessment.domain.service.PracticeGrader;
@@ -16,9 +17,10 @@ import java.util.Set;
 import java.util.UUID;
 
 public class PracticeService implements PracticeUseCase {
-    private static final Set<String> PARTICIPANT_ROLES = Set.of(
-            "STUDENT", "LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
-    private static final Set<String> REVIEWER_ROLES = Set.of("LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
+    private static final Set<String> PARTICIPANT_ROLES =
+            Set.of("STUDENT", "LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
+    private static final Set<String> REVIEWER_ROLES =
+            Set.of("LECTURE", "INSTRUCTOR", "LEADER", "ADMIN");
     private final PracticeStore store;
     private final AccountAccess access;
 
@@ -27,16 +29,17 @@ public class PracticeService implements PracticeUseCase {
         this.access = access;
     }
 
-    public List<PracticeExam> list() {
+    public List<PracticeExamSummary> list() {
         return store.publishedExams();
     }
 
     public PracticeExam exam(String slug) {
-        return store.publishedExam(slug).orElseThrow(() -> notFound("Không tìm thấy đề luyện tập."));
+        return store.publishedExam(slug)
+                .orElseThrow(() -> notFound("Không tìm thấy đề luyện tập."));
     }
 
     public PracticeExam exam(UUID id) {
-        return store.publishedExam(id).orElseThrow(() -> notFound("Không tìm thấy đề luyện tập."));
+        return store.attemptExam(id).orElseThrow(() -> notFound("Không tìm thấy đề luyện tập."));
     }
 
     public PracticeAttempt start(UUID actor, String slug) {
@@ -52,24 +55,27 @@ public class PracticeService implements PracticeUseCase {
     public PracticeAttempt answer(UUID actor, UUID id, UUID questionId, String answer) {
         PracticeAttempt attempt = attempt(actor, id);
         if (!"IN_PROGRESS".equals(attempt.status())) {
-            throw new BusinessException("attempt_submitted", ErrorType.CONFLICT,
-                    "Bài đã nộp, không thể sửa đáp án.");
+            throw new BusinessException(
+                    "attempt_submitted", ErrorType.CONFLICT, "Bài đã nộp, không thể sửa đáp án.");
         }
         PracticeExam exam = exam(attempt.examId());
-        PracticeExam.Question question = exam.sections().stream()
-                .flatMap(section -> section.questions().stream())
-                .filter(candidate -> candidate.id().equals(questionId)).findFirst()
-                .orElseThrow(() -> notFound("Câu hỏi không thuộc đề này."));
+        PracticeExam.Question question =
+                exam.sections().stream()
+                        .flatMap(section -> section.questions().stream())
+                        .filter(candidate -> candidate.id().equals(questionId))
+                        .findFirst()
+                        .orElseThrow(() -> notFound("Câu hỏi không thuộc đề này."));
         String response = answer == null ? "" : answer.trim();
         if (response.length() > ("WRITING".equals(question.kind()) ? 10000 : 500)
-                || ("CHOICE".equals(question.kind()) && !response.isEmpty()
-                && !question.options().contains(response))) {
-            throw new BusinessException("invalid_practice_answer", ErrorType.BAD_REQUEST,
-                    "Đáp án không hợp lệ.");
+                || ("CHOICE".equals(question.kind())
+                        && !response.isEmpty()
+                        && !question.options().contains(response))) {
+            throw new BusinessException(
+                    "invalid_practice_answer", ErrorType.BAD_REQUEST, "Đáp án không hợp lệ.");
         }
         if (!store.saveAnswer(id, actor, questionId, response)) {
-            throw new BusinessException("attempt_submitted", ErrorType.CONFLICT,
-                    "Bài đã nộp, không thể sửa đáp án.");
+            throw new BusinessException(
+                    "attempt_submitted", ErrorType.CONFLICT, "Bài đã nộp, không thể sửa đáp án.");
         }
         return attempt(actor, id);
     }
@@ -77,8 +83,8 @@ public class PracticeService implements PracticeUseCase {
     public PracticeGrader.Result submit(UUID actor, UUID id) {
         PracticeAttempt attempt = attempt(actor, id);
         if (!"IN_PROGRESS".equals(attempt.status()) || !store.submit(id, actor)) {
-            throw new BusinessException("attempt_submitted", ErrorType.CONFLICT,
-                    "Bài đã được nộp trước đó.");
+            throw new BusinessException(
+                    "attempt_submitted", ErrorType.CONFLICT, "Bài đã được nộp trước đó.");
         }
         return result(actor, id);
     }
@@ -86,7 +92,9 @@ public class PracticeService implements PracticeUseCase {
     public PracticeGrader.Result result(UUID actor, UUID id) {
         PracticeAttempt attempt = attempt(actor, id);
         if (!"SUBMITTED".equals(attempt.status())) {
-            throw new BusinessException("attempt_in_progress", ErrorType.CONFLICT,
+            throw new BusinessException(
+                    "attempt_in_progress",
+                    ErrorType.CONFLICT,
                     "Hãy nộp bài trước khi xem kết quả.");
         }
         PracticeExam exam = exam(attempt.examId());
@@ -94,33 +102,56 @@ public class PracticeService implements PracticeUseCase {
     }
 
     public List<WritingSubmission> pendingWriting(UUID reviewer, int page) {
-        requireReviewer(reviewer);
+        boolean globalReviewer = requireReviewer(reviewer);
         if (page < 0 || page > 10000) {
-            throw new BusinessException("invalid_review_page", ErrorType.BAD_REQUEST,
-                    "Trang danh sách không hợp lệ.");
+            throw new BusinessException(
+                    "invalid_review_page", ErrorType.BAD_REQUEST, "Trang danh sách không hợp lệ.");
         }
-        return store.pendingWriting(reviewer, page);
+        return store.pendingWriting(reviewer, globalReviewer, page);
     }
 
-    public WritingReview reviewWriting(UUID reviewer, UUID attemptId, UUID questionId,
-                                       int taskScore, int coherenceScore, int vocabularyScore,
-                                       int grammarScore, String feedback) {
-        requireReviewer(reviewer);
+    public WritingReview reviewWriting(
+            UUID reviewer,
+            UUID attemptId,
+            UUID questionId,
+            int taskScore,
+            int coherenceScore,
+            int vocabularyScore,
+            int grammarScore,
+            String feedback) {
+        boolean globalReviewer = requireReviewer(reviewer);
         if (store.attempt(attemptId, reviewer).isPresent()) {
-            throw new BusinessException("self_review_forbidden", ErrorType.FORBIDDEN,
+            throw new BusinessException(
+                    "self_review_forbidden",
+                    ErrorType.FORBIDDEN,
                     "Không thể tự chấm bài của mình.");
         }
         String comment = feedback == null ? "" : feedback.trim();
-        if (comment.isEmpty() || comment.length() > 2000
-                || !validScore(taskScore) || !validScore(coherenceScore)
-                || !validScore(vocabularyScore) || !validScore(grammarScore)) {
-            throw new BusinessException("invalid_writing_review", ErrorType.BAD_REQUEST,
+        if (comment.isEmpty()
+                || comment.length() > 2000
+                || !validScore(taskScore)
+                || !validScore(coherenceScore)
+                || !validScore(vocabularyScore)
+                || !validScore(grammarScore)) {
+            throw new BusinessException(
+                    "invalid_writing_review",
+                    ErrorType.BAD_REQUEST,
                     "Cần nhận xét và điểm từ 0 đến 5 cho mỗi tiêu chí.");
         }
-        WritingReview review = new WritingReview(attemptId, questionId, reviewer,
-                taskScore, coherenceScore, vocabularyScore, grammarScore, comment);
-        if (!store.reviewWriting(review)) {
-            throw new BusinessException("writing_review_unavailable", ErrorType.CONFLICT,
+        WritingReview review =
+                new WritingReview(
+                        attemptId,
+                        questionId,
+                        reviewer,
+                        taskScore,
+                        coherenceScore,
+                        vocabularyScore,
+                        grammarScore,
+                        comment);
+        if (!store.reviewWriting(review, globalReviewer)) {
+            throw new BusinessException(
+                    "writing_review_unavailable",
+                    ErrorType.CONFLICT,
                     "Bài viết không chờ chấm hoặc đã có người chấm.");
         }
         return review;
@@ -128,16 +159,22 @@ public class PracticeService implements PracticeUseCase {
 
     private void requireParticipant(UUID actor) {
         if (access.requireActive(actor).roles().stream().noneMatch(PARTICIPANT_ROLES::contains)) {
-            throw new BusinessException("practice_participation_forbidden", ErrorType.FORBIDDEN,
+            throw new BusinessException(
+                    "practice_participation_forbidden",
+                    ErrorType.FORBIDDEN,
                     "Tài khoản không có quyền làm bài luyện tập.");
         }
     }
 
-    private void requireReviewer(UUID actor) {
-        if (access.requireActive(actor).roles().stream().noneMatch(REVIEWER_ROLES::contains)) {
-            throw new BusinessException("writing_review_forbidden", ErrorType.FORBIDDEN,
+    private boolean requireReviewer(UUID actor) {
+        Set<String> roles = access.requireActive(actor).roles();
+        if (roles.stream().noneMatch(REVIEWER_ROLES::contains)) {
+            throw new BusinessException(
+                    "writing_review_forbidden",
+                    ErrorType.FORBIDDEN,
                     "Tài khoản không có quyền chấm bài viết.");
         }
+        return roles.contains("ADMIN") || roles.contains("LEADER");
     }
 
     private static boolean validScore(int score) {

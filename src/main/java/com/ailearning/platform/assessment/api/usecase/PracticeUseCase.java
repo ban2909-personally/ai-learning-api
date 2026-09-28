@@ -2,6 +2,7 @@ package com.ailearning.platform.assessment.api.usecase;
 
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.PracticeExamSummary;
 import com.ailearning.platform.assessment.domain.model.WritingReview;
 import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 import com.ailearning.platform.assessment.domain.service.PracticeGrader;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PracticeUseCase {
-    List<PracticeExam> list();
+    List<PracticeExamSummary> list();
 
     PracticeExam exam(String slug);
 
@@ -28,7 +29,13 @@ public interface PracticeUseCase {
 
     List<WritingSubmission> pendingWriting(UUID reviewer, int page);
 
-    WritingReview reviewWriting(UUID reviewer, UUID attemptId, UUID questionId,
-                                int taskScore, int coherenceScore, int vocabularyScore,
-                                int grammarScore, String feedback);
+    WritingReview reviewWriting(
+            UUID reviewer,
+            UUID attemptId,
+            UUID questionId,
+            int taskScore,
+            int coherenceScore,
+            int vocabularyScore,
+            int grammarScore,
+            String feedback);
 }

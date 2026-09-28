@@ -30,14 +30,14 @@ Before preview migration, back up the existing preview database and verify the d
 
 ## Implementation / verification checklist
 
-- [ ] V18 migration/backfill and old-result preservation test.
-- [ ] Framework-free content/lifecycle/authorization policy tests.
-- [ ] Authoring input contracts, use case, Mockito port tests and configuration.
-- [ ] Transactional JDBC authoring adapter, optimistic concurrency and publication constraints.
-- [ ] HTTP roles/ownership/private-key tests; taking and archived-result regression tests.
-- [ ] Role-scoped Writing queue and atomic review authorization for new series.
-- [ ] Lazy responsive studio/editor, save/conflict/publish/clone flows and unit tests.
-- [ ] Full backend verify, frontend build/tests and phone/tablet/desktop browser acceptance.
+- [x] V18 migration/backfill and old-result preservation test.
+- [x] Framework-free content/lifecycle/authorization policy tests.
+- [x] Authoring input contracts, use case, Mockito port tests and configuration.
+- [x] Transactional JDBC authoring adapter, optimistic concurrency and publication constraints.
+- [x] HTTP roles/ownership/private-key tests; taking and archived-result regression tests.
+- [x] Role-scoped Writing queue and atomic review authorization for new series.
+- [x] Lazy responsive studio/editor, save/conflict/publish/clone flows and unit tests.
+- [x] Full backend verify, frontend build/tests and phone/tablet/desktop browser acceptance.
 - [ ] Feature commits → push branch → exact CI green → main merge/push → main CI evidence.
 
 The next increments remain managed MinIO audio (<10 MB), server-enforced timing/resume/history, fuller original/licensed practice banks and analytics. This feature does not redefine those unfinished requirements as complete.

@@ -3,15 +3,18 @@ package com.ailearning.platform.assessment.adapter.in.web.controller;
 import com.ailearning.platform.assessment.api.usecase.PracticeUseCase;
 import com.ailearning.platform.assessment.domain.model.PracticeAttempt;
 import com.ailearning.platform.assessment.domain.model.PracticeExam;
+import com.ailearning.platform.assessment.domain.model.PracticeExamSummary;
 import com.ailearning.platform.assessment.domain.model.WritingReview;
 import com.ailearning.platform.assessment.domain.model.WritingSubmission;
 import com.ailearning.platform.assessment.domain.service.PracticeGrader;
+
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -31,10 +34,8 @@ public class PracticeController {
     }
 
     @GetMapping("/exams")
-    List<ExamSummary> exams() {
-        return practice.list().stream().map(exam -> new ExamSummary(
-                exam.slug(), exam.title(), exam.description(), exam.durationMinutes(),
-                exam.sections().stream().map(PracticeExam.Section::skill).toList())).toList();
+    List<PracticeExamSummary> exams() {
+        return practice.list();
     }
 
     @GetMapping("/exams/{slug}")
@@ -56,8 +57,11 @@ public class PracticeController {
     }
 
     @PutMapping("/attempts/{id}/answers/{questionId}")
-    PracticeAttempt answer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
-                           @PathVariable UUID questionId, @Valid @RequestBody AnswerRequest request) {
+    PracticeAttempt answer(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID id,
+            @PathVariable UUID questionId,
+            @Valid @RequestBody AnswerRequest request) {
         return practice.answer(actor(jwt), id, questionId, request.answer());
     }
 
@@ -78,12 +82,20 @@ public class PracticeController {
     }
 
     @PutMapping("/attempts/{id}/writing/{questionId}/review")
-    WritingReview reviewWriting(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
-                                @PathVariable UUID questionId,
-                                @Valid @RequestBody WritingReviewRequest request) {
-        return practice.reviewWriting(actor(jwt), id, questionId,
-                request.taskScore(), request.coherenceScore(), request.vocabularyScore(),
-                request.grammarScore(), request.feedback());
+    WritingReview reviewWriting(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID id,
+            @PathVariable UUID questionId,
+            @Valid @RequestBody WritingReviewRequest request) {
+        return practice.reviewWriting(
+                actor(jwt),
+                id,
+                questionId,
+                request.taskScore(),
+                request.coherenceScore(),
+                request.vocabularyScore(),
+                request.grammarScore(),
+                request.feedback());
     }
 
     private static UUID actor(Jwt jwt) {
@@ -91,22 +103,46 @@ public class PracticeController {
     }
 
     private static ExamView view(PracticeExam exam) {
-        return new ExamView(exam.slug(), exam.title(), exam.description(),
-                exam.durationMinutes(), exam.sections().stream().map(section ->
-                        new SectionView(section.id(), section.skill(), section.title(),
-                                section.passage(), section.audioText(), section.questions().stream()
-                                .map(question -> new QuestionView(question.id(), question.kind(),
-                                        question.prompt(), question.options())).toList())).toList());
+        return new ExamView(
+                exam.slug(),
+                exam.title(),
+                exam.description(),
+                exam.durationMinutes(),
+                exam.sections().stream()
+                        .map(
+                                section ->
+                                        new SectionView(
+                                                section.id(),
+                                                section.skill(),
+                                                section.title(),
+                                                section.passage(),
+                                                section.audioText(),
+                                                section.questions().stream()
+                                                        .map(
+                                                                question ->
+                                                                        new QuestionView(
+                                                                                question.id(),
+                                                                                question.kind(),
+                                                                                question.prompt(),
+                                                                                question.options()))
+                                                        .toList()))
+                        .toList());
     }
 
-    record ExamSummary(String slug, String title, String description,
-                       int durationMinutes, List<String> skills) {}
+    record ExamView(
+            String slug,
+            String title,
+            String description,
+            int durationMinutes,
+            List<SectionView> sections) {}
 
-    record ExamView(String slug, String title, String description,
-                    int durationMinutes, List<SectionView> sections) {}
-
-    record SectionView(UUID id, String skill, String title, String passage,
-                       String audioText, List<QuestionView> questions) {}
+    record SectionView(
+            UUID id,
+            String skill,
+            String title,
+            String passage,
+            String audioText,
+            List<QuestionView> questions) {}
 
     record QuestionView(UUID id, String kind, String prompt, List<String> options) {}
 
@@ -114,9 +150,10 @@ public class PracticeController {
 
     record AnswerRequest(@NotNull String answer) {}
 
-    record WritingReviewRequest(@NotNull @Min(0) @Max(5) Integer taskScore,
-                                @NotNull @Min(0) @Max(5) Integer coherenceScore,
-                                @NotNull @Min(0) @Max(5) Integer vocabularyScore,
-                                @NotNull @Min(0) @Max(5) Integer grammarScore,
-                                @NotBlank @Size(max = 2000) String feedback) {}
+    record WritingReviewRequest(
+            @NotNull @Min(0) @Max(5) Integer taskScore,
+            @NotNull @Min(0) @Max(5) Integer coherenceScore,
+            @NotNull @Min(0) @Max(5) Integer vocabularyScore,
+            @NotNull @Min(0) @Max(5) Integer grammarScore,
+            @NotBlank @Size(max = 2000) String feedback) {}
 }

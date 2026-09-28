@@ -16,7 +16,7 @@ Product direction: English learning, practice and community. Preserve the modula
 - [x] Writing submission, role-restricted human rubric, self-review prevention and one-time atomic review.
 - [x] Lazy responsive discovery, exam workspace, result review and reviewer queue.
 - [x] Unit, Mockito port, PostgreSQL/Flyway, MockMvc/security, Modulith/ArchUnit and frontend/browser checks.
-- [ ] Push feature branches, verify exact remote CI revisions, then merge and verify main.
+- [x] Push feature branches, verify exact remote CI revisions, then merge and verify main (foundation and human review; report dated 2026-09-27).
 
 ## 3. Next: content authoring and media
 

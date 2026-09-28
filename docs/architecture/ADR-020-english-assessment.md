@@ -1,6 +1,6 @@
 # ADR-020: English learning and practice assessment
 
-Status: Accepted; Writing review increment implemented (2026-09-27).
+Status: Accepted; foundation and Writing review delivered to CI-green main (2026-09-28).
 
 ## Context
 
@@ -35,7 +35,7 @@ ETS treats TOEIC Listening & Reading separately from Speaking & Writing. We ther
 - [x] Unit, repository/integration, HTTP security, Modulith/ArchUnit and frontend tests.
 - [x] Flyway V17, reviewer-role boundary, human rubric, reviewer queue and learner feedback display.
 - [x] Run full backend/frontend checks before push.
-- [ ] Confirm remote CI is green before merge to `main`.
+- [x] Confirm remote CI is green before merge to `main`; main CI also passed. Exact delivery evidence is in the development report.
 
 Existing course or community records are not deleted or rewritten by this migration. Legacy preview seed data is revised separately, idempotently, after assessment is validated.
 

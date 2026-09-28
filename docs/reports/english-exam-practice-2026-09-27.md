@@ -46,4 +46,15 @@
 - Writing is graded by a human reviewer, not automatically. The initial queue has no assignment workflow or override of a saved review.
 - The sample has 4 objective questions and 1 Writing prompt. It is a functional vertical slice, not a full TOEIC/IELTS test or official scoring system.
 - Existing built-in programming categories remain in the schema for backward compatibility; they are not deleted or silently remapped. Authoring, content licensing and category retirement need separate migration decisions.
-- Remote CI is required before merging to `main`.
+- Foundation and human review are delivered. Authoring, managed audio, exam timing/history and reviewer assignment remain on the migration checklist; the whole platform is not complete.
+
+## Git and remote delivery evidence (2026-09-28)
+
+Both repositories used `feature/english-exam-practice`; feature CI passed before merge. The merge trees were identical to their verified feature trees before pushing main. No pull, stash, force-push or unrelated commit was used.
+
+| Repository | Feature commits | Main merge | Feature CI | Main CI |
+| --- | --- | --- | --- | --- |
+| Backend | `0d80fbe`, `582b4f5`, `5e8cbcd` | `c05c901` | [36368915472](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36368915472), 11/11 successful | [36369487328](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36369487328), 11/11 successful |
+| Frontend | `e72f578`, `10dfb35` | `f78a48c` | [36368274928](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36368274928), successful | [36369488182](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36369488182), successful |
+
+Backend gates include verification/SBOM, production image security, PostgreSQL and MinIO recovery, and all seven existing performance profiles. Passing these regression gates is not a production capacity or zero-vulnerability claim. The SHA-256 of the untouched user performance file was identical before and after merge.

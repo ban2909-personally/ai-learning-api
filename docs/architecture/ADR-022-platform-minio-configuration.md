@@ -24,7 +24,7 @@ This is a small prerequisite increment, not a claim that exam audio upload alrea
 - [x] Configuration binding, credential redaction and invalid-settings tests.
 - [x] Existing Testcontainers MinIO integration, module boundaries and full backend verify: 266 tests, 0 failures/errors/skips.
 - [x] Preserve user changes, unchanged pom.xml, database behavior and upload limits.
-- [ ] Feature commit/push → exact CI green → merge/push main → main CI evidence.
+- [x] Feature commit/push → exact CI green → merge/push main → main CI evidence (36374966911 and 36375557315, 11/11 jobs each).
 
 ## Next product increment
 

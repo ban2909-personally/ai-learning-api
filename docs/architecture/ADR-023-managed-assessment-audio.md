@@ -1,6 +1,6 @@
 # ADR-023: Managed Listening audio and private transcripts
 
-Status: Proposed for the next product increment (2026-09-28). Not implemented by ADR-022.
+Status: Accepted for the next product increment (2026-09-28). Specification only; implementation not yet complete. Not implemented by ADR-022.
 
 ## Scope and architecture
 
@@ -20,7 +20,8 @@ An audio asset has an opaque UUID, owning exam series, immutable object key, can
 
 - Public discovery/intro must not reveal private draft asset IDs, keys, storage credentials or transcripts. Public current publications may stream their attached audio; draft/pending content follows author/admin and submitted-content leader permissions.
 - Archived audio is available only through an owned historical attempt or an authorized staff workspace, not by guessing an asset ID. Authorization happens before opening MinIO, including HEAD and Range requests.
-- Do not put bearer tokens in audio URLs. Public publication audio can use a normal HTML audio source. Protected playback uses authenticated fetch with a bounded Blob and releases its object URL on replacement/unmount; do not store credentials or audio in localStorage.
+- Do not put bearer tokens in audio URLs or localStorage. Prefer native ranged playback under `/api/v1/media/practice/`, reusing the existing HttpOnly `media_access` cookie accepted only for GET/HEAD media requests. Authoring mutations still require the bearer header. Public playback is permitted only after assessment verifies a current publication; protected draft/archived playback still checks identity, role and ownership server-side.
+- Use the existing `getAccessToken()`/single-flight refresh flow before loading protected audio; do not create a second auth system. Keep `preload="none"`, explicit load/retry UI, safe loading/error states and native accessible controls. Do not buffer the full file as a Blob by default merely to inject a bearer header when ranged cookie-authenticated delivery already exists.
 - Add managed-audio fields additively to existing contracts. During an in-progress attempt, no transcript/key/explanation is returned. Post-submit review may show the private transcript and explanations. Preserve existing submitted attempts/reviews.
 - Implement bounded GET/HEAD, single-byte-range handling, 206/416, ETag, correct Content-Length/Content-Range and safe content headers. No arbitrary external URL/proxy or unbounded read-all operation.
 
@@ -29,6 +30,7 @@ An audio asset has an opaque UUID, owning exam series, immutable object key, can
 - [ ] Asset metadata migration and historical revision preservation; no destructive preview reset.
 - [ ] Framework-free upload/read policy, meaningful use-case and output ports, configuration wiring.
 - [ ] Authorization/IDOR, type/signature/size boundary tests (9,999,999 allowed; 10,000,000 denied).
+- [ ] Media-cookie GET/HEAD and expired-session/retry tests; prove the media cookie cannot authorize an upload/save/submit mutation.
 - [ ] MinIO Testcontainers store/range/failure-cleanup tests; PostgreSQL attachment/CAS rollback tests.
 - [ ] No transcript exposure in public/in-progress payloads; transcript appears only in submitted review.
 - [ ] Responsive author audio upload/preview and learner player, loading/failure/retry UX and URL cleanup tests.
@@ -37,3 +39,5 @@ An audio asset has an opaque UUID, owning exam series, immutable object key, can
 - [ ] Full verify → feature commit/push → exact CI green → merge/push main → main CI evidence.
 
 Server-enforced timing, resume/history, full-length content banks, analytics and any validated official score conversion remain separate increments. Human Writing rubric stays distinct from Listening/Reading raw correctness.
+
+Local acceptance asset prepared in ignored `target/preview-audio/`: original team announcement synthesized locally, 770,104-byte WAV, SHA-256 `D1246DED1856E8E7625281877BAB98C250F51247D31A535FCF3490A7C40814ED`. It has not been uploaded or attached to a DB revision. Its provenance is recorded alongside the file.

@@ -1,6 +1,6 @@
 # Platform storage configuration · 2026-09-28
 
-Status: implementation, focused tests and full local verify complete on `refactor/platform-storage-configuration`; feature/main CI delivery is pending.
+Status: delivered. Exact feature CI and main CI both passed all 11 jobs; merged/pushed to main `d931910`.
 
 ## Phạm vi đã làm
 
@@ -15,7 +15,11 @@ Status: implementation, focused tests and full local verify complete on `refacto
 
 ADR-022 được viết/commit trước source. Configuration test xác nhận bind prefix cũ, singleton client, không cần kết nối MinIO khi khởi tạo, từ chối credentials trống và không lộ chúng trong toString. Existing MinIO Testcontainers kiểm tra upload, byte range và delete; Modulith/ArchUnit qua focused run.
 
-`mvn -q verify` exit 0: **266 tests / 96 suites**, 0 failures, 0 errors, 0 skipped. JaCoCo LINE 3,705 covered / 4,156 total (~89.15%); coverage gate, package và application SBOM qua. Feature/main CI còn pending; không skip hoặc hạ gate để đạt xanh.
+`mvn -q verify` exit 0: **266 tests / 96 suites**, 0 failures, 0 errors, 0 skipped. JaCoCo LINE 3,705 covered / 4,156 total (~89.15%); coverage gate, package và application SBOM qua. Không skip hoặc hạ gate để đạt xanh.
+
+- Feature commit `e0a669f0c8bfd091d0da8ff22cc63b0bed107fcd`: [CI 36374966911](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36374966911), **11/11 jobs success**.
+- Main merge `d931910a6577a60b8e0698884898b71314a6b59c`: [CI 36375557315](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36375557315), **11/11 jobs success**, rechecked 2026-09-28.
+- Main merge tree matches the verified feature tip exactly; remote main was checked before normal merge/push. No pull, stash or force push.
 
 Local run có Hikari connection-closed warnings lúc các test context cũ giữ pool sau khi Testcontainers đã đóng, như ở baseline authoring. Hai warning khởi tạo cấu hình thất bại là negative tests cố ý truyền credentials trống; các assertion và XML test results đều qua. Lượt verify này không có thông báo Surefire kill-fork timeout được ghi nhận ở lượt authoring trước.
 
@@ -34,4 +38,4 @@ Frontend không đổi trong increment này: baseline main `fe9ddb9` đã qua CI
 
 `performance/ai-mentor.js` là diff có sẵn của bạn, không stage/sửa. SHA-256 giữ nguyên `D5ABE8938A956876305A98AE6F560246EF33BDFA45EA3457DF1AB5DCD5879336`.
 
-Đây là prerequisite kỹ thuật, **chưa có upload audio đề thi**. ADR-023 là spec proposed cho bước tiếp theo: file dưới 10 MB, opaque immutable asset, kiểm tra file, quyền author/read, transcript private khi thi, player responsive và Range/HEAD. Timer enforcement, resume/history, full question banks, analytics và official score conversion vẫn nằm trên roadmap; Speaking ngoài phạm vi.
+Đây là prerequisite kỹ thuật, **chưa có upload audio đề thi**. ADR-023 là spec cho bước tiếp theo: file dưới 10 MB, opaque immutable asset, kiểm tra file, quyền author/read, transcript private khi thi, player responsive và Range/HEAD. Timer enforcement, resume/history, full question banks, analytics và official score conversion vẫn nằm trên roadmap; Speaking ngoài phạm vi.

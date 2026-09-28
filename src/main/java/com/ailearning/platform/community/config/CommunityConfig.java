@@ -17,7 +17,17 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Clock;
 
 @Configuration
+@org.springframework.scheduling.annotation.EnableScheduling
 public class CommunityConfig {
+    @Bean
+    com.ailearning.platform.community.api.usecase.MediaRetentionUseCase mediaRetentionUseCase(
+            com.ailearning.platform.community.application.port.out.MediaRetentionStore store,
+            CommunityMediaStorage storage,
+            Clock clock) {
+        return new com.ailearning.platform.community.application.service.impl.MediaRetentionService(
+                store, storage, clock);
+    }
+
     @Bean
     SpaceChatUseCase spaceChatUseCase(
             CommunityStore store, SpaceChatStore chat, AccountAccess accounts) {

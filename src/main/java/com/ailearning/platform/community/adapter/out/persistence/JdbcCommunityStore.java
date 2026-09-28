@@ -50,12 +50,12 @@ public class JdbcCommunityStore implements CommunityStore {
             """
 SELECT p.id,p.author_id,author.display_name AS author_name,p.space_id,
   space.name AS space_name,p.body,p.shared_post_id,
-  CASE WHEN original.status='ACTIVE' THEN original.body ELSE NULL END AS shared_body,
-  CASE WHEN original.status='ACTIVE' THEN original_author.display_name ELSE NULL END
+  CASE WHEN (original.status='ACTIVE' AND (original.media_id IS NULL OR shared_media.expires_at>CURRENT_TIMESTAMP)) THEN original.body ELSE NULL END AS shared_body,
+  CASE WHEN (original.status='ACTIVE' AND (original.media_id IS NULL OR shared_media.expires_at>CURRENT_TIMESTAMP)) THEN original_author.display_name ELSE NULL END
     AS shared_author_name,
   p.created_at,p.status,
   media.id AS media_id,media.content_type AS media_type,media.size_bytes AS media_size,
-  CASE WHEN original.status='ACTIVE' THEN shared_media.id ELSE NULL END AS shared_media_id,
+  CASE WHEN (original.status='ACTIVE' AND (original.media_id IS NULL OR shared_media.expires_at>CURRENT_TIMESTAMP)) THEN shared_media.id ELSE NULL END AS shared_media_id,
   shared_media.content_type AS shared_media_type,shared_media.size_bytes AS shared_media_size,
   (SELECT count(*) FROM community_post_likes likes WHERE likes.post_id=p.id) AS like_count,
   (SELECT count(*) FROM community_comments comments
@@ -240,7 +240,14 @@ ON CONFLICT(space_id,user_id) DO NOTHING
 
     @Override
     public Optional<Post> findPost(UUID id) {
-        return jdbc.query("SELECT * FROM community_posts WHERE id=?", this::post, id).stream()
+        return jdbc
+                .query(
+                        "SELECT p.* FROM community_posts p LEFT JOIN community_media_assets media"
+                            + " ON media.id=p.media_id WHERE p.id=? AND (p.media_id IS NULL OR"
+                            + " media.expires_at>CURRENT_TIMESTAMP)",
+                        this::post,
+                        id)
+                .stream()
                 .findFirst();
     }
 
@@ -248,7 +255,9 @@ ON CONFLICT(space_id,user_id) DO NOTHING
     public Optional<PostView> postView(UUID id, UUID viewer) {
         return withPreviews(
                         jdbc.query(
-                                POST_SELECT + " WHERE p.id=? AND p.status<>'REMOVED'",
+                                POST_SELECT
+                                        + " WHERE p.id=? AND p.status<>'REMOVED' AND (p.media_id IS"
+                                        + " NULL OR media.expires_at>CURRENT_TIMESTAMP)",
                                 this::postView,
                                 viewer,
                                 id))
@@ -264,6 +273,7 @@ ON CONFLICT(space_id,user_id) DO NOTHING
                         .append(
                                 """
 WHERE p.status='ACTIVE'
+  AND (p.media_id IS NULL OR media.expires_at>CURRENT_TIMESTAMP)
   AND (p.space_id IS NULL OR space.visibility='PUBLIC'
        OR EXISTS(SELECT 1 FROM community_members visible
                  WHERE visible.space_id=p.space_id AND visible.user_id=?::uuid
@@ -297,15 +307,20 @@ WHERE p.status='ACTIVE'
         if (media != null) {
             jdbc.update(
                     """
-INSERT INTO community_media_assets(id,owner_id,object_key,content_type,size_bytes,etag)
-VALUES (?,?,?,?,?,?)
+INSERT INTO community_media_assets(id,owner_id,object_key,content_type,size_bytes,etag,created_at,expires_at)
+VALUES (?,?,?,?,?,?,?,?)
 """,
                     media.id(),
                     media.ownerId(),
                     media.objectKey(),
                     media.contentType(),
                     media.sizeBytes(),
-                    media.etag());
+                    media.etag(),
+                    Timestamp.from(post.createdAt()),
+                    Timestamp.from(
+                            new com.ailearning.platform.community.domain.policy
+                                            .MediaRetentionPolicy()
+                                    .expiresAt(post.createdAt())));
         }
         return jdbc.update(
                         """
@@ -330,6 +345,7 @@ VALUES (?,?,?,?,?,?,?,?,?)
                 POST_SELECT
                         + """
 WHERE p.space_id=? AND p.status='PENDING'
+  AND (p.media_id IS NULL OR media.expires_at>CURRENT_TIMESTAMP)
   AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
     AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
 ORDER BY p.created_at,p.id LIMIT 20 OFFSET ?
@@ -347,14 +363,15 @@ ORDER BY p.created_at,p.id LIMIT 20 OFFSET ?
         lockSpace(spaceId);
         return jdbc.update(
                         """
-                        UPDATE community_posts p SET status=?,updated_at=CURRENT_TIMESTAMP
-                        WHERE p.id=? AND p.space_id=? AND p.status='PENDING'
-                          AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
-                            AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
-                          AND (?=false OR EXISTS (SELECT 1 FROM community_members author
-                            WHERE author.space_id=p.space_id AND author.user_id=p.author_id
-                            AND author.status='ACTIVE'))
-                        """,
+UPDATE community_posts p SET status=?,updated_at=CURRENT_TIMESTAMP
+WHERE p.id=? AND p.space_id=? AND p.status='PENDING'
+  AND NOT EXISTS (SELECT 1 FROM community_media_assets media WHERE media.id=p.media_id AND media.expires_at<=CURRENT_TIMESTAMP)
+  AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
+    AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
+  AND (?=false OR EXISTS (SELECT 1 FROM community_members author
+    WHERE author.space_id=p.space_id AND author.user_id=p.author_id
+    AND author.status='ACTIVE'))
+""",
                         approve ? "ACTIVE" : "REJECTED",
                         postId,
                         spaceId,

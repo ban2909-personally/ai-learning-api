@@ -34,7 +34,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.community.retention.enabled=false")
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 class CommunityApiIntegrationTest {
@@ -488,6 +488,94 @@ class CommunityApiIntegrationTest {
                 .andExpect(jsonPath("$.likeCount").value(1))
                 .andExpect(jsonPath("$.commentPreview.length()").value(2))
                 .andExpect(jsonPath("$.commentPreview[1].body").value("Tip 3"));
+    }
+
+    @Autowired com.ailearning.platform.community.api.usecase.MediaRetentionUseCase retention;
+
+    @Test
+    void expiredMediaIsHiddenBeforeCleanupAndOnlyItsCommunityObjectIsDeleted() throws Exception {
+        String result =
+                mvc.perform(
+                                multipart("/api/v1/community/posts/media")
+                                        .file(image())
+                                        .with(as(guest, "GUEST"))
+                                        .param("body", "Expires in fourteen days"))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String postId = JsonPath.read(result, "$.id");
+        String mediaId = JsonPath.read(result, "$.media.id");
+        String shared = createSharedPost(guest, postId);
+        jdbc.update(
+                "UPDATE community_media_assets SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 second'"
+                    + " WHERE id=?::uuid",
+                mediaId);
+        mvc.perform(get("/api/v1/community/posts/" + postId)).andExpect(status().isNotFound());
+        mvc.perform(head("/api/v1/media/community/posts/" + postId))
+                .andExpect(status().isNotFound());
+        mvc.perform(
+                        post("/api/v1/community/posts/" + postId + "/likes")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/community/posts/" + shared))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sharedBody").doesNotExist())
+                .andExpect(jsonPath("$.sharedMedia").doesNotExist());
+        var cleanup = retention.cleanup();
+        org.assertj.core.api.Assertions.assertThat(cleanup.deleted()).isEqualTo(1);
+        verify(mediaStorage).delete("community/" + mediaId);
+        org.assertj.core.api.Assertions.assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM community_posts WHERE id=?::uuid",
+                                String.class,
+                                postId))
+                .isEqualTo("REMOVED");
+        org.assertj.core.api.Assertions.assertThat(retention.cleanup().claimed()).isZero();
+    }
+
+    @Test
+    void failedRetentionDeletionHasDurableLeaseAndRetryWithoutExposingPost() throws Exception {
+        String result =
+                mvc.perform(
+                                multipart("/api/v1/community/posts/media")
+                                        .file(image())
+                                        .with(as(guest, "GUEST")))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String id = JsonPath.read(result, "$.media.id");
+        jdbc.update(
+                "UPDATE community_media_assets SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 day'"
+                    + " WHERE id=?::uuid",
+                id);
+        doThrow(new IllegalStateException("offline")).when(mediaStorage).delete("community/" + id);
+        org.assertj.core.api.Assertions.assertThat(retention.cleanup().failed()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(retention.cleanup().claimed()).isZero();
+        jdbc.update(
+                "UPDATE community_media_assets SET cleanup_claimed_until=CURRENT_TIMESTAMP-INTERVAL"
+                    + " '1 second' WHERE id=?::uuid",
+                id);
+        doNothing().when(mediaStorage).delete("community/" + id);
+        org.assertj.core.api.Assertions.assertThat(retention.cleanup().deleted()).isEqualTo(1);
+    }
+
+    private String createSharedPost(UUID actor, String original) throws Exception {
+        var response =
+                mvc.perform(
+                                post("/api/v1/community/posts")
+                                        .with(as(actor, "GUEST"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                "{\"body\":\"Shared routine\",\"sharedPostId\":\""
+                                                        + original
+                                                        + "\"}"))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        return JsonPath.read(response, "$.id");
     }
 
     private org.springframework.mock.web.MockMultipartFile image() {

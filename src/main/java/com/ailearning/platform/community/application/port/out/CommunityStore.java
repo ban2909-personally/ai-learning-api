@@ -10,6 +10,8 @@ import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
+import com.ailearning.platform.community.domain.model.PostFeatures;
+import com.ailearning.platform.community.domain.model.ReactionKind;
 import com.ailearning.platform.community.domain.model.Space;
 
 import java.time.Instant;
@@ -18,6 +20,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CommunityStore {
+    void setReaction(UUID postId, UUID actor, ReactionKind kind);
+
     Optional<Space> findSpace(UUID id);
 
     Optional<SpaceView> spaceView(UUID id, UUID viewer);
@@ -44,7 +48,7 @@ public interface CommunityStore {
 
     List<PostView> feed(UUID viewer, UUID spaceId, Instant before, UUID beforeId, int limit);
 
-    boolean createPost(Post post, MediaAsset media);
+    boolean createPost(Post post, MediaAsset media, PostFeatures features);
 
     Optional<MediaAsset> postMedia(UUID postId);
 

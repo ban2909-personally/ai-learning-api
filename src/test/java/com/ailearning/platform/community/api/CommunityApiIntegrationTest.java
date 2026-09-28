@@ -142,6 +142,449 @@ class CommunityApiIntegrationTest {
         return JsonPath.read(response, "$.id");
     }
 
+    private String discussion(UUID author, String role, String spaceId, String kind)
+            throws Exception {
+        String response =
+                mvc.perform(
+                                post("/api/v1/community/posts")
+                                        .with(as(author, role))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                """
+{"body":"","spaceId":%s,"features":{"appearance":{"attachmentUrl":"https://example.com/enroll","backgroundColor":"#173569","fontColor":"#ffffff"},"poll":{"kind":"%s","question":"Which skill?","options":["Listening","Reading"],"closesAt":null}}}
+"""
+                                                        .formatted(
+                                                                spaceId == null
+                                                                        ? "null"
+                                                                        : "\"" + spaceId + "\"",
+                                                                kind)))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.poll.options.length()").value(2))
+                        .andExpect(
+                                jsonPath("$.appearance.attachmentUrl")
+                                        .value("https://example.com/enroll"))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        return response;
+    }
+
+    @Test
+    void pollsPersistSingleVoteAllowChangingRetractionAndAuthorClosure() throws Exception {
+        String result = discussion(guest, "GUEST", null, "POLL");
+        String id = JsonPath.read(result, "$.id"),
+                first = JsonPath.read(result, "$.poll.options[0].id"),
+                second = JsonPath.read(result, "$.poll.options[1].id");
+        mvc.perform(get("/api/v1/community/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts[0].poll.question").value("Which skill?"));
+        String path = "/api/v1/community/posts/" + id + "/poll";
+        mvc.perform(
+                        post(path + "/votes")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + first + "\"}"))
+                .andExpect(status().isUnauthorized());
+        for (int i = 0; i < 2; i++)
+            mvc.perform(
+                            post(path + "/votes")
+                                    .with(as(student, "STUDENT"))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"optionId\":\"" + first + "\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.poll.totalVotes").value(1))
+                    .andExpect(jsonPath("$.poll.myOptionId").value(first));
+        mvc.perform(
+                        post(path + "/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + second + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.poll.options[0].votes").value(0))
+                .andExpect(jsonPath("$.poll.options[1].votes").value(1));
+        mvc.perform(
+                        post(path + "/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + UUID.randomUUID() + "\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete(path + "/votes").with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.poll.totalVotes").value(0));
+        mvc.perform(post(path + "/close").with(as(student, "ADMIN")))
+                .andExpect(status().isForbidden());
+        mvc.perform(post(path + "/close").with(as(guest, "GUEST")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.poll.closed").value(true));
+        mvc.perform(
+                        post(path + "/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + first + "\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void pendingElectionKeepsOptionsInReviewAndPrivatePollRequiresApprovedMembership()
+            throws Exception {
+        String space = createSpace(guest, "GUEST", "PAGE", "PRIVATE");
+        String owner = discussion(guest, "GUEST", space, "ELECTION");
+        String ownerId = JsonPath.read(owner, "$.id"),
+                option = JsonPath.read(owner, "$.poll.options[0].id");
+        mvc.perform(
+                        post("/api/v1/community/posts/" + ownerId + "/poll/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + option + "\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(
+                        post("/api/v1/community/spaces/" + space + "/join")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/community/posts/" + ownerId).with(as(student, "STUDENT")))
+                .andExpect(status().isForbidden());
+        mvc.perform(
+                        post("/api/v1/community/spaces/"
+                                        + space
+                                        + "/members/"
+                                        + student
+                                        + "/approve")
+                                .with(as(guest, "GUEST")))
+                .andExpect(status().isOk());
+        String pending = discussion(student, "STUDENT", space, "ELECTION"),
+                id = JsonPath.read(pending, "$.id");
+        mvc.perform(
+                        get("/api/v1/community/spaces/" + space + "/posts/pending")
+                                .with(as(guest, "GUEST")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].poll.kind").value("ELECTION"))
+                .andExpect(jsonPath("$[0].poll.options.length()").value(2));
+        mvc.perform(
+                        post("/api/v1/community/posts/" + id + "/poll/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + option + "\"}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(
+                        post("/api/v1/community/spaces/" + space + "/posts/" + id + "/approve")
+                                .with(as(guest, "GUEST")))
+                .andExpect(status().isOk());
+        mvc.perform(
+                        post("/api/v1/community/posts/" + ownerId + "/poll/votes")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"optionId\":\"" + option + "\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/community/posts/" + id + "/poll/close").with(as(guest, "GUEST")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void unsafeLinkLowContrastAndDuplicateOptionsCannotPersistPartialPost() throws Exception {
+        for (String features :
+                java.util.List.of(
+                        "{\"appearance\":{\"attachmentUrl\":\"javascript:alert(1)\"}}",
+                        "{\"appearance\":{\"backgroundColor\":\"#ffffff\",\"fontColor\":\"#ffffff\"}}",
+                        "{\"poll\":{\"kind\":\"POLL\",\"question\":\"Skill?\",\"options\":[\"Reading\",\""
+                            + " reading \"]}}")) {
+            mvc.perform(
+                            post("/api/v1/community/posts")
+                                    .with(as(guest, "GUEST"))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"body\":\"hello\",\"features\":" + features + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(
+                0L, jdbc.queryForObject("SELECT count(*) FROM community_posts", Long.class));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                0L, jdbc.queryForObject("SELECT count(*) FROM community_polls", Long.class));
+    }
+
+    @Test
+    void multipartMediaAcceptsFeaturesWithoutBreakingUploadContract() throws Exception {
+        byte[] png =
+                java.util.HexFormat.of()
+                        .parseHex(
+                                "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000b49444154789c636000020000050001a5f645400000000049454e44ae426082");
+        var file =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file", "demo.png", "image/png", png);
+        var features =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "features",
+                        "",
+                        "application/json",
+                        "{\"poll\":{\"kind\":\"POLL\",\"question\":\"Skill?\",\"options\":[\"Reading\",\"Listening\"]}}"
+                                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        mvc.perform(
+                        multipart("/api/v1/community/posts/media")
+                                .file(file)
+                                .file(features)
+                                .param("body", "hello")
+                                .with(as(guest, "GUEST")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.poll.options.length()").value(2))
+                .andExpect(jsonPath("$.media.contentType").value("image/png"))
+                .andExpect(jsonPath("$.mediaExpiresAt").isNotEmpty());
+    }
+
+    private String directRequest(UUID actor, String role, String email, UUID client, String body)
+            throws Exception {
+        return mvc.perform(
+                        post("/api/v1/community/direct/conversations")
+                                .with(as(actor, role))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"email\":\""
+                                                + email
+                                                + "\",\"clientId\":\""
+                                                + client
+                                                + "\",\"body\":\""
+                                                + body
+                                                + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+    }
+
+    @Test
+    void privateChatRequiresRecipientConsentAndIdempotentSendWithHonestUnreadMarkers()
+            throws Exception {
+        UUID client = UUID.randomUUID();
+        String request = directRequest(guest, "GUEST", "student@community.test", client, "Hello");
+        String id = JsonPath.read(request, "$.id"),
+                path = "/api/v1/community/direct/conversations/" + id;
+        String duplicate = directRequest(guest, "GUEST", "student@community.test", client, "Hello");
+        org.junit.jupiter.api.Assertions.assertEquals(id, JsonPath.read(duplicate, "$.id"));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                1L,
+                jdbc.queryForObject("SELECT count(*) FROM community_direct_messages", Long.class));
+        mvc.perform(get("/api/v1/community/direct/conversations"))
+                .andExpect(status().isUnauthorized());
+        for (String endpoint : java.util.List.of("/messages", "/read", "/decision")) {
+            if (endpoint.equals("/messages"))
+                mvc.perform(get(path + endpoint).with(as(lecturer, "ADMIN")))
+                        .andExpect(status().isNotFound());
+            else
+                mvc.perform(
+                                post(path + endpoint)
+                                        .with(as(lecturer, "ADMIN"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                endpoint.equals("/read")
+                                                        ? "{\"sequence\":1}"
+                                                        : "{\"accept\":true}"))
+                        .andExpect(status().isNotFound());
+        }
+        mvc.perform(
+                        post(path + "/decision")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"accept\":true}"))
+                .andExpect(status().isForbidden());
+        String send = "{\"clientId\":\"" + UUID.randomUUID() + "\",\"body\":\"Waiting\"}";
+        mvc.perform(
+                        post(path + "/messages")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(send))
+                .andExpect(status().isConflict());
+        mvc.perform(
+                        get("/api/v1/community/direct/conversations")
+                                .param("filter", "requests")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestCount").value(1))
+                .andExpect(jsonPath("$.totalUnread").value(1));
+        mvc.perform(
+                        post(path + "/decision")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"accept\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+        mvc.perform(
+                        post(path + "/read")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"sequence\":9223372036854775807}"))
+                .andExpect(status().isNoContent());
+        for (int i = 0; i < 2; i++)
+            mvc.perform(
+                            post(path + "/messages")
+                                    .with(as(guest, "GUEST"))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(send))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.body").value("Waiting"));
+        mvc.perform(
+                        get("/api/v1/community/direct/conversations")
+                                .param("filter", "unread")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalUnread").value(1));
+        mvc.perform(
+                        post(path + "/messages")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(send.replace("Waiting", "Changed")))
+                .andExpect(status().isConflict());
+        mvc.perform(
+                        post(path + "/messages")
+                                .with(as(lecturer, "ADMIN"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(send))
+                .andExpect(status().isNotFound());
+        jdbc.update("UPDATE users SET status='DISABLED' WHERE id=?", guest);
+        mvc.perform(
+                        post(path + "/messages")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(send))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void declineStopsChatRestartAndSelfMessagingIsRejected() throws Exception {
+        String id =
+                JsonPath.read(
+                        directRequest(
+                                guest,
+                                "GUEST",
+                                "lecture@community.test",
+                                UUID.randomUUID(),
+                                "Hello"),
+                        "$.id");
+        mvc.perform(
+                        post("/api/v1/community/direct/conversations/" + id + "/decision")
+                                .with(as(lecturer, "LECTURE"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"accept\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DECLINED"));
+        for (String email :
+                java.util.List.of(
+                        "lecture@community.test",
+                        "guest@community.test",
+                        "missing@community.test")) {
+            mvc.perform(
+                            post("/api/v1/community/direct/conversations")
+                                    .with(as(guest, "GUEST"))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            "{\"email\":\""
+                                                    + email
+                                                    + "\",\"clientId\":\""
+                                                    + UUID.randomUUID()
+                                                    + "\",\"body\":\"Again\"}"))
+                    .andExpect(
+                            email.startsWith("lecture")
+                                    ? status().isConflict()
+                                    : email.startsWith("guest")
+                                            ? status().isBadRequest()
+                                            : status().isNotFound());
+        }
+    }
+
+    @Test
+    void directMessageHistoryUsesBoundedBidirectionalKeysetAndValidatesFilters() throws Exception {
+        String id =
+                JsonPath.read(
+                        directRequest(
+                                guest,
+                                "GUEST",
+                                "student@community.test",
+                                UUID.randomUUID(),
+                                "First"),
+                        "$.id");
+        for (int i = 0; i < 54; i++)
+            jdbc.update(
+                    "INSERT INTO"
+                        + " community_direct_messages(id,conversation_id,author_id,client_id,body)"
+                        + " VALUES (?,?,?,?,?)",
+                    UUID.randomUUID(),
+                    UUID.fromString(id),
+                    guest,
+                    UUID.randomUUID(),
+                    "Message " + i);
+        String path = "/api/v1/community/direct/conversations/" + id + "/messages";
+        String result =
+                mvc.perform(get(path).with(as(student, "STUDENT")))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.messages.length()").value(50))
+                        .andExpect(jsonPath("$.hasMore").value(true))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        Number oldest = JsonPath.read(result, "$.oldestSequence"),
+                newest = JsonPath.read(result, "$.newestSequence");
+        mvc.perform(get(path).param("before", oldest.toString()).with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages.length()").value(5));
+        mvc.perform(get(path).param("after", "0").with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages.length()").value(50))
+                .andExpect(jsonPath("$.hasMore").value(true));
+        mvc.perform(get(path).param("after", newest.toString()).with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages.length()").value(0));
+        mvc.perform(get(path).param("after", "1").param("before", "2").with(as(student, "STUDENT")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(
+                        get("/api/v1/community/direct/conversations")
+                                .param("filter", "unknown")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(
+                        get("/api/v1/community/direct/conversations")
+                                .param("page", "-1")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void reactionsReplaceOneUserChoiceAndPreserveLegacyLikeContract() throws Exception {
+        String id = createPost(guest, "GUEST", "English practice", null);
+        String path = "/api/v1/community/posts/" + id;
+        for (String kind :
+                java.util.List.of("LIKE", "LOVE", "CARE", "HAHA", "WOW", "SAD", "ANGRY")) {
+            for (int retry = 0; retry < 2; retry++)
+                mvc.perform(
+                                post(path + "/reactions")
+                                        .with(as(student, "STUDENT"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"kind\":\"" + kind + "\"}"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.viewerReaction").value(kind))
+                        .andExpect(jsonPath("$.likeCount").value(1))
+                        .andExpect(jsonPath("$.reactionCounts." + kind).value(1));
+        }
+        mvc.perform(
+                        post(path + "/reactions")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"kind\":\"UNKNOWN\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/community/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts[0].reactionCounts.ANGRY").value(1));
+        mvc.perform(post(path + "/likes").with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.viewerReaction").value("LIKE"));
+        mvc.perform(delete(path + "/reactions").with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likeCount").value(0))
+                .andExpect(jsonPath("$.likedByViewer").value(false));
+        String space = createSpace(guest, "GUEST", "GROUP", "PRIVATE"),
+                privateId = createPost(guest, "GUEST", "Private English", space);
+        mvc.perform(
+                        post("/api/v1/community/posts/" + privateId + "/reactions")
+                                .with(as(student, "ADMIN"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"kind\":\"LOVE\"}"))
+                .andExpect(status().isForbidden());
+    }
+
     @Test
     void authenticatedGuestCanPostReactReplyAndShareWhileAnonymousCanRead() throws Exception {
         mvc.perform(get("/api/v1/community/feed"))
@@ -509,7 +952,7 @@ class CommunityApiIntegrationTest {
         String shared = createSharedPost(guest, postId);
         jdbc.update(
                 "UPDATE community_media_assets SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 second'"
-                    + " WHERE id=?::uuid",
+                        + " WHERE id=?::uuid",
                 mediaId);
         mvc.perform(get("/api/v1/community/posts/" + postId)).andExpect(status().isNotFound());
         mvc.perform(head("/api/v1/media/community/posts/" + postId))
@@ -548,14 +991,14 @@ class CommunityApiIntegrationTest {
         String id = JsonPath.read(result, "$.media.id");
         jdbc.update(
                 "UPDATE community_media_assets SET expires_at=CURRENT_TIMESTAMP-INTERVAL '1 day'"
-                    + " WHERE id=?::uuid",
+                        + " WHERE id=?::uuid",
                 id);
         doThrow(new IllegalStateException("offline")).when(mediaStorage).delete("community/" + id);
         org.assertj.core.api.Assertions.assertThat(retention.cleanup().failed()).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(retention.cleanup().claimed()).isZero();
         jdbc.update(
                 "UPDATE community_media_assets SET cleanup_claimed_until=CURRENT_TIMESTAMP-INTERVAL"
-                    + " '1 second' WHERE id=?::uuid",
+                        + " '1 second' WHERE id=?::uuid",
                 id);
         doNothing().when(mediaStorage).delete("community/" + id);
         org.assertj.core.api.Assertions.assertThat(retention.cleanup().deleted()).isEqualTo(1);

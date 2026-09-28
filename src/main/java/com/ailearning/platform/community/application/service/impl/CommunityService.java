@@ -15,9 +15,11 @@ import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
 import com.ailearning.platform.community.domain.model.PostStatus;
+import com.ailearning.platform.community.domain.model.ReactionKind;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.model.SpaceVisibility;
 import com.ailearning.platform.community.domain.policy.CommunityPolicy;
+import com.ailearning.platform.community.domain.policy.PostFeaturesPolicy;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
@@ -273,7 +275,20 @@ public class CommunityService implements CommunityUseCase {
         if (command == null)
             throw new BusinessException(
                     "invalid_post", ErrorType.BAD_REQUEST, "Bài viết không hợp lệ.");
-        String body = policy.postBody(command.body(), command.sharedPostId() != null);
+        var features = new PostFeaturesPolicy().normalize(command.features(), Instant.now(clock));
+        boolean hasAttachment =
+                features != null
+                        && (features.poll() != null
+                                || (features.appearance() != null
+                                        && features.appearance().attachmentUrl() != null));
+        String caption = command.body();
+        if (caption != null && caption.isBlank() && hasAttachment) {
+            caption =
+                    features.poll() != null
+                            ? features.poll().question()
+                            : features.appearance().attachmentUrl();
+        }
+        String body = policy.postBody(caption, command.sharedPostId() != null || hasAttachment);
         Space destination = command.spaceId() == null ? null : spaceRequired(command.spaceId());
         Membership membership = destination == null ? null : member(destination.id(), actor);
         PostStatus status = policy.newPostStatus(destination, membership);
@@ -295,7 +310,8 @@ public class CommunityService implements CommunityUseCase {
                                 null,
                                 status,
                                 Instant.now(clock)),
-                        null);
+                        null,
+                        features);
         if (!created) throw conflict("Quyền đăng bài đã thay đổi. Hãy tải lại cộng đồng.");
         return postView(id, actor);
     }
@@ -346,6 +362,16 @@ public class CommunityService implements CommunityUseCase {
                     "Chỉ tác giả hoặc quản trị viên cộng đồng được gỡ bài viết.");
         }
         store.removePost(postId);
+    }
+
+    @Override
+    public PostView react(UUID actor, UUID postId, ReactionKind kind) {
+        actor(actor);
+        Post post = postRequired(postId);
+        Space space = post.spaceId() == null ? null : spaceRequired(post.spaceId());
+        policy.requireInteraction(space, space == null ? null : member(space.id(), actor));
+        store.setReaction(postId, actor, kind);
+        return postView(postId, actor);
     }
 
     @Override

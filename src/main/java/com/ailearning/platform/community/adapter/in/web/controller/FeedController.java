@@ -7,8 +7,10 @@ import com.ailearning.platform.community.api.contract.CreatePostCommand;
 import com.ailearning.platform.community.api.contract.FeedPage;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.usecase.CommunityUseCase;
+import com.ailearning.platform.community.domain.model.ReactionKind;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -54,7 +56,11 @@ public class FeedController {
     PostView create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PostRequest request) {
         return community.createPost(
                 actor(jwt),
-                new CreatePostCommand(request.body(), request.spaceId(), request.sharedPostId()));
+                new CreatePostCommand(
+                        request.body(),
+                        request.spaceId(),
+                        request.sharedPostId(),
+                        request.features()));
     }
 
     @PostMapping("/posts/{id}/likes")
@@ -65,6 +71,21 @@ public class FeedController {
     @DeleteMapping("/posts/{id}/likes")
     PostView unlike(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return community.like(actor(jwt), id, false);
+    }
+
+    public record ReactionRequest(@NotNull ReactionKind kind) {}
+
+    @PostMapping("/posts/{id}/reactions")
+    PostView react(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID id,
+            @Valid @RequestBody ReactionRequest request) {
+        return community.react(actor(jwt), id, request.kind());
+    }
+
+    @DeleteMapping("/posts/{id}/reactions")
+    PostView retractReaction(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return community.react(actor(jwt), id, null);
     }
 
     @DeleteMapping("/posts/{id}")

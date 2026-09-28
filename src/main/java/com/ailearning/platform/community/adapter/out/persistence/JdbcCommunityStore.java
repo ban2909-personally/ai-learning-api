@@ -6,16 +6,20 @@ import com.ailearning.platform.community.api.contract.MemberView;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.contract.SpaceView;
 import com.ailearning.platform.community.application.port.out.CommunityStore;
+import com.ailearning.platform.community.application.port.out.PostFeatureStore;
 import com.ailearning.platform.community.domain.model.Comment;
 import com.ailearning.platform.community.domain.model.MediaAsset;
 import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
+import com.ailearning.platform.community.domain.model.PostFeatures;
 import com.ailearning.platform.community.domain.model.PostStatus;
+import com.ailearning.platform.community.domain.model.ReactionKind;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.model.SpaceKind;
 import com.ailearning.platform.community.domain.model.SpaceVisibility;
+import com.ailearning.platform.community.domain.valueobject.PostAppearance;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -54,6 +58,7 @@ SELECT p.id,p.author_id,author.display_name AS author_name,p.space_id,
   CASE WHEN (original.status='ACTIVE' AND (original.media_id IS NULL OR shared_media.expires_at>CURRENT_TIMESTAMP)) THEN original_author.display_name ELSE NULL END
     AS shared_author_name,
   p.created_at,p.status,
+  f.attachment_url,f.background_color,f.font_color,media.expires_at AS media_expires_at,
   media.id AS media_id,media.content_type AS media_type,media.size_bytes AS media_size,
   CASE WHEN (original.status='ACTIVE' AND (original.media_id IS NULL OR shared_media.expires_at>CURRENT_TIMESTAMP)) THEN shared_media.id ELSE NULL END AS shared_media_id,
   shared_media.content_type AS shared_media_type,shared_media.size_bytes AS shared_media_size,
@@ -62,8 +67,8 @@ SELECT p.id,p.author_id,author.display_name AS author_name,p.space_id,
    WHERE comments.post_id=p.id AND comments.status='ACTIVE') AS comment_count,
   (SELECT count(*) FROM community_posts shares
    WHERE shares.shared_post_id=p.id AND shares.status='ACTIVE') AS share_count,
-  EXISTS(SELECT 1 FROM community_post_likes mine
-         WHERE mine.post_id=p.id AND mine.user_id=?::uuid) AS liked_by_viewer,
+  (SELECT kind FROM community_post_likes mine
+         WHERE mine.post_id=p.id AND mine.user_id=?::uuid) AS viewer_reaction,
   (p.status='ACTIVE' AND (p.space_id IS NULL OR space.visibility='PUBLIC')) AS shareable
 FROM community_posts p
 JOIN users author ON author.id=p.author_id
@@ -72,6 +77,7 @@ LEFT JOIN community_posts original ON original.id=p.shared_post_id
 LEFT JOIN users original_author ON original_author.id=original.author_id
 LEFT JOIN community_media_assets media ON media.id=p.media_id
 LEFT JOIN community_media_assets shared_media ON shared_media.id=original.media_id
+LEFT JOIN community_post_features f ON f.post_id=p.id
 """;
 
     private static final String COMMENT_SELECT =
@@ -85,9 +91,11 @@ LEFT JOIN community_media_assets shared_media ON shared_media.id=original.media_
             """;
 
     private final JdbcTemplate jdbc;
+    private final PostFeatureStore features;
 
-    public JdbcCommunityStore(JdbcTemplate jdbc) {
+    public JdbcCommunityStore(JdbcTemplate jdbc, PostFeatureStore features) {
         this.jdbc = jdbc;
+        this.features = features;
     }
 
     @Override
@@ -243,8 +251,8 @@ ON CONFLICT(space_id,user_id) DO NOTHING
         return jdbc
                 .query(
                         "SELECT p.* FROM community_posts p LEFT JOIN community_media_assets media"
-                            + " ON media.id=p.media_id WHERE p.id=? AND (p.media_id IS NULL OR"
-                            + " media.expires_at>CURRENT_TIMESTAMP)",
+                                + " ON media.id=p.media_id WHERE p.id=? AND (p.media_id IS NULL OR"
+                                + " media.expires_at>CURRENT_TIMESTAMP)",
                         this::post,
                         id)
                 .stream()
@@ -260,7 +268,8 @@ ON CONFLICT(space_id,user_id) DO NOTHING
                                         + " NULL OR media.expires_at>CURRENT_TIMESTAMP)",
                                 this::postView,
                                 viewer,
-                                id))
+                                id),
+                        viewer)
                 .stream()
                 .findFirst();
     }
@@ -292,12 +301,13 @@ WHERE p.status='ACTIVE'
         }
         query.append(" ORDER BY p.created_at DESC,p.id DESC LIMIT ?");
         parameters.add(limit);
-        return withPreviews(jdbc.query(query.toString(), this::postView, parameters.toArray()));
+        return withPreviews(
+                jdbc.query(query.toString(), this::postView, parameters.toArray()), viewer);
     }
 
     @Override
     @Transactional
-    public boolean createPost(Post post, MediaAsset media) {
+    public boolean createPost(Post post, MediaAsset media, PostFeatures postFeatures) {
         if (post.spaceId() != null) {
             lockSpace(post.spaceId());
             Membership current = membership(post.spaceId(), post.authorId()).orElse(null);
@@ -322,39 +332,44 @@ VALUES (?,?,?,?,?,?,?,?)
                                             .MediaRetentionPolicy()
                                     .expiresAt(post.createdAt())));
         }
-        return jdbc.update(
-                        """
+        boolean created =
+                jdbc.update(
+                                """
 INSERT INTO community_posts(id,author_id,space_id,shared_post_id,body,media_id,status,created_at,updated_at)
 VALUES (?,?,?,?,?,?,?,?,?)
 """,
-                        post.id(),
-                        post.authorId(),
-                        post.spaceId(),
-                        post.sharedPostId(),
-                        post.body(),
-                        post.mediaId(),
-                        post.status().name(),
-                        Timestamp.from(post.createdAt()),
-                        Timestamp.from(post.createdAt()))
-                == 1;
+                                post.id(),
+                                post.authorId(),
+                                post.spaceId(),
+                                post.sharedPostId(),
+                                post.body(),
+                                post.mediaId(),
+                                post.status().name(),
+                                Timestamp.from(post.createdAt()),
+                                Timestamp.from(post.createdAt()))
+                        == 1;
+        if (created) features.create(post.id(), postFeatures);
+        return created;
     }
 
     @Override
     public List<PostView> pendingPosts(UUID spaceId, UUID viewer, int page) {
-        return jdbc.query(
-                POST_SELECT
-                        + """
+        return withPreviews(
+                jdbc.query(
+                        POST_SELECT
+                                + """
 WHERE p.space_id=? AND p.status='PENDING'
   AND (p.media_id IS NULL OR media.expires_at>CURRENT_TIMESTAMP)
   AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
     AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
 ORDER BY p.created_at,p.id LIMIT 20 OFFSET ?
 """,
-                this::postView,
-                viewer,
-                spaceId,
-                viewer,
-                (long) page * 20);
+                        this::postView,
+                        viewer,
+                        spaceId,
+                        viewer,
+                        (long) page * 20),
+                viewer);
     }
 
     @Override
@@ -406,7 +421,7 @@ WHERE p.id=? AND p.space_id=? AND p.status='PENDING'
                 .findFirst();
     }
 
-    private List<PostView> withPreviews(List<PostView> posts) {
+    private List<PostView> withPreviews(List<PostView> posts, UUID viewer) {
         if (posts.isEmpty()) return posts;
         Map<UUID, List<CommentView>> previews = new HashMap<>();
         String placeholders = String.join(",", Collections.nCopies(posts.size(), "?"));
@@ -428,8 +443,25 @@ SELECT * FROM (
                         query, this::mapCommentView, posts.stream().map(PostView::id).toArray())) {
             previews.computeIfAbsent(comment.postId(), ignored -> new ArrayList<>()).add(comment);
         }
+        var polls = features.polls(posts.stream().map(PostView::id).toList(), viewer);
+        Map<UUID, Map<ReactionKind, Long>> counts = new HashMap<>();
+        jdbc.query(
+                "SELECT post_id,kind,count(*) AS total FROM community_post_likes WHERE post_id IN ("
+                        + placeholders
+                        + ") GROUP BY post_id,kind",
+                rs -> {
+                    counts.computeIfAbsent(
+                                    rs.getObject("post_id", UUID.class), ignored -> new HashMap<>())
+                            .put(ReactionKind.valueOf(rs.getString("kind")), rs.getLong("total"));
+                },
+                posts.stream().map(PostView::id).toArray());
         return posts.stream()
-                .map(post -> post.withCommentPreview(previews.getOrDefault(post.id(), List.of())))
+                .map(
+                        post ->
+                                post.withCommentPreview(previews.getOrDefault(post.id(), List.of()))
+                                        .withPoll(polls.get(post.id()))
+                                        .withReactionCounts(
+                                                counts.getOrDefault(post.id(), Map.of())))
                 .toList();
     }
 
@@ -443,17 +475,17 @@ SELECT * FROM (
 
     @Override
     public void addLike(UUID postId, UUID userId) {
-        jdbc.update(
-                "INSERT INTO community_post_likes(post_id,user_id) VALUES (?,?) ON CONFLICT DO"
-                        + " NOTHING",
-                postId,
-                userId);
+        setReaction(postId, userId, ReactionKind.LIKE);
     }
 
     @Override
     public void removeLike(UUID postId, UUID userId) {
-        jdbc.update(
-                "DELETE FROM community_post_likes WHERE post_id=? AND user_id=?", postId, userId);
+        setReaction(postId, userId, null);
+    }
+
+    @Override
+    public void setReaction(UUID postId, UUID actor, ReactionKind kind) {
+        features.react(postId, actor, kind);
     }
 
     @Override
@@ -555,7 +587,7 @@ VALUES (?,?,?,?,?,'ACTIVE',?)
                 rs.getLong("like_count"),
                 rs.getLong("comment_count"),
                 rs.getLong("share_count"),
-                rs.getBoolean("liked_by_viewer"),
+                rs.getString("viewer_reaction") != null,
                 rs.getBoolean("shareable"),
                 PostStatus.valueOf(rs.getString("status")),
                 List.of(),
@@ -570,7 +602,21 @@ VALUES (?,?,?,?,?,'ACTIVE',?)
                         : new MediaView(
                                 rs.getObject("shared_media_id", UUID.class),
                                 rs.getString("shared_media_type"),
-                                rs.getLong("shared_media_size")));
+                                rs.getLong("shared_media_size")),
+                rs.getString("attachment_url") == null && rs.getString("background_color") == null
+                        ? null
+                        : new PostAppearance(
+                                rs.getString("attachment_url"),
+                                rs.getString("background_color"),
+                                rs.getString("font_color")),
+                null,
+                rs.getTimestamp("media_expires_at") == null
+                        ? null
+                        : rs.getTimestamp("media_expires_at").toInstant(),
+                rs.getString("viewer_reaction") == null
+                        ? null
+                        : ReactionKind.valueOf(rs.getString("viewer_reaction")),
+                Map.of());
     }
 
     private Comment comment(ResultSet rs, int row) throws SQLException {

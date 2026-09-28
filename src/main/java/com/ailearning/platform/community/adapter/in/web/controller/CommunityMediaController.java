@@ -4,6 +4,7 @@ import com.ailearning.platform.community.api.contract.CommunityMediaUpload;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.usecase.CommunityMediaUseCase;
 import com.ailearning.platform.community.domain.model.MediaByteRange;
+import com.ailearning.platform.community.domain.model.PostFeatures;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
 
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,14 +49,16 @@ public class CommunityMediaController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam MultipartFile file,
             @RequestParam(defaultValue = "") String body,
-            @RequestParam(required = false) UUID spaceId)
+            @RequestParam(required = false) UUID spaceId,
+            @RequestPart(required = false) PostFeatures features)
             throws IOException {
         try (var input = file.getInputStream()) {
             return media.publish(
                     UUID.fromString(jwt.getSubject()),
                     spaceId,
                     body,
-                    new CommunityMediaUpload(file.getContentType(), file.getSize(), input));
+                    new CommunityMediaUpload(file.getContentType(), file.getSize(), input),
+                    features);
         }
     }
 

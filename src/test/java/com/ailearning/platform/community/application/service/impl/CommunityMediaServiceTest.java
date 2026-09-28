@@ -52,13 +52,13 @@ class CommunityMediaServiceTest {
     void publishesMediaOnlyPostWithOpaqueOwnedAsset() {
         when(storage.store(anyString(), eq("image/png"), eq((long) png.length), any()))
                 .thenReturn("etag");
-        when(store.createPost(any(), any())).thenReturn(true);
+        when(store.createPost(any(), any(), any())).thenReturn(true);
         PostView view = mock(PostView.class);
         when(community.post(eq(actor), any())).thenReturn(view);
-        assertSame(view, service.publish(actor, null, "", upload()));
+        assertSame(view, service.publish(actor, null, "", upload(), null));
         ArgumentCaptor<Post> post = ArgumentCaptor.forClass(Post.class);
         ArgumentCaptor<MediaAsset> asset = ArgumentCaptor.forClass(MediaAsset.class);
-        verify(store).createPost(post.capture(), asset.capture());
+        verify(store).createPost(post.capture(), asset.capture(), isNull());
         assertEquals(PostStatus.ACTIVE, post.getValue().status());
         assertEquals(actor, asset.getValue().ownerId());
         assertEquals(post.getValue().mediaId(), asset.getValue().id());
@@ -80,21 +80,25 @@ class CommunityMediaServiceTest {
                                         "Club",
                                         "",
                                         Instant.EPOCH)));
-        assertThrows(BusinessException.class, () -> service.publish(actor, spaceId, "", upload()));
+        assertThrows(
+                BusinessException.class, () -> service.publish(actor, spaceId, "", upload(), null));
         verifyNoInteractions(storage);
     }
 
     @Test
     void cleansStorageIfPersistenceRejectsChangedPermissionsButNotOnResponseFailure() {
         when(storage.store(anyString(), anyString(), anyLong(), any())).thenReturn("etag");
-        when(store.createPost(any(), any())).thenReturn(false);
-        assertThrows(BusinessException.class, () -> service.publish(actor, null, "", upload()));
+        when(store.createPost(any(), any(), any())).thenReturn(false);
+        assertThrows(
+                BusinessException.class, () -> service.publish(actor, null, "", upload(), null));
         verify(storage).delete(anyString());
         clearInvocations(storage);
-        when(store.createPost(any(), any())).thenReturn(true);
+        when(store.createPost(any(), any(), any())).thenReturn(true);
         when(community.post(eq(actor), any()))
                 .thenThrow(new IllegalStateException("response unavailable"));
-        assertThrows(IllegalStateException.class, () -> service.publish(actor, null, "", upload()));
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.publish(actor, null, "", upload(), null));
         verify(storage, never()).delete(anyString());
     }
 
@@ -108,7 +112,8 @@ class CommunityMediaServiceTest {
                                 null,
                                 "",
                                 new CommunityMediaUpload(
-                                        "image/png", 10_000_000, new ByteArrayInputStream(png))));
+                                        "image/png", 10_000_000, new ByteArrayInputStream(png)),
+                                null));
         assertThrows(
                 BusinessException.class,
                 () ->
@@ -117,8 +122,10 @@ class CommunityMediaServiceTest {
                                 null,
                                 "",
                                 new CommunityMediaUpload(
-                                        "text/html", 16, new ByteArrayInputStream(png))));
-        assertThrows(BusinessException.class, () -> service.publish(null, null, "", upload()));
+                                        "text/html", 16, new ByteArrayInputStream(png)),
+                                null));
+        assertThrows(
+                BusinessException.class, () -> service.publish(null, null, "", upload(), null));
         verifyNoInteractions(storage);
     }
 

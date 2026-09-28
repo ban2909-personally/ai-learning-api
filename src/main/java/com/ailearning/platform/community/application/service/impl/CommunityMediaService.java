@@ -11,10 +11,12 @@ import com.ailearning.platform.community.domain.model.MediaAsset;
 import com.ailearning.platform.community.domain.model.MediaByteRange;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
+import com.ailearning.platform.community.domain.model.PostFeatures;
 import com.ailearning.platform.community.domain.model.PostStatus;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.policy.CommunityMediaPolicy;
 import com.ailearning.platform.community.domain.policy.CommunityPolicy;
+import com.ailearning.platform.community.domain.policy.PostFeaturesPolicy;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
@@ -48,11 +50,17 @@ public class CommunityMediaService implements CommunityMediaUseCase {
     }
 
     @Override
-    public PostView publish(UUID actor, UUID spaceId, String body, CommunityMediaUpload upload) {
+    public PostView publish(
+            UUID actor,
+            UUID spaceId,
+            String body,
+            CommunityMediaUpload upload,
+            PostFeatures inputFeatures) {
         if (actor == null)
             throw new BusinessException(
                     "login_required", ErrorType.UNAUTHORIZED, "Hãy đăng nhập để đăng bài.");
         accounts.requireActive(actor);
+        var features = new PostFeaturesPolicy().normalize(inputFeatures, Instant.now(clock));
         Space space = spaceId == null ? null : store.findSpace(spaceId).orElseThrow(this::missing);
         Membership member = spaceId == null ? null : store.membership(spaceId, actor).orElse(null);
         PostStatus status = policy.newPostStatus(space, member);
@@ -87,7 +95,7 @@ public class CommunityMediaService implements CommunityMediaUseCase {
                             status,
                             Instant.now(clock));
             try {
-                if (!store.createPost(post, asset))
+                if (!store.createPost(post, asset, features))
                     throw new BusinessException(
                             "community_conflict",
                             ErrorType.CONFLICT,

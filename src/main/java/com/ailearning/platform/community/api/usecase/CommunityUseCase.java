@@ -8,6 +8,7 @@ import com.ailearning.platform.community.api.contract.MemberView;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.contract.SpaceView;
 import com.ailearning.platform.community.domain.model.MemberRole;
+import com.ailearning.platform.community.domain.model.ReactionKind;
 
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +45,8 @@ public interface CommunityUseCase {
     PostView reviewPost(UUID actor, UUID spaceId, UUID postId, boolean approve);
 
     PostView like(UUID actor, UUID postId, boolean liked);
+
+    PostView react(UUID actor, UUID postId, ReactionKind kind);
 
     void removePost(UUID actor, UUID postId);
 

@@ -25,12 +25,14 @@ The real browser upload transport currently hardcodes PUT, while community media
 ## Architecture and verification
 Domain pure policies/value objects; API/usecase meaningful input boundaries; application ports and adapters for JDBC/MinIO. No infrastructure imports in domain/application. Create post + features/poll atomically; votes and direct requests lock/recheck state. Aggregate counts/previews batched, no N+1 per feed card. JUnit/Mockito, MockMvc/Security, PostgreSQL/MinIO Testcontainers, Modulith/ArchUnit and existing regression gates remain.
 
-- [ ] Upload transport + actual browser composer upload.
-- [ ] Retention migration, scheduler/leases, failure retry and expiry/private-media tests.
-- [ ] Links, colors, polls/elections, atomic votes and UI.
-- [ ] Direct request/inbox/chat, IDOR and retry/read-cursor tests.
-- [ ] Full backend/frontend/responsive verification and factual report.
-- [ ] Feature CI green; main permission and CI verified independently.
+- [x] Upload transport + actual browser composer upload.
+- [x] Retention migration, scheduler/leases, failure retry and expiry/private-media tests.
+- [x] Links, colors, polls/elections, atomic votes/reactions and UI.
+- [x] Direct request/inbox/chat, IDOR and retry/read-cursor tests.
+- [x] Full backend/frontend/responsive verification and factual report.
+- [ ] Exact feature commit CI after push (see delivery receipt).
+- [ ] Fresh main permission and main CI verified independently.
+
+Addendum: reactions extend the existing per-user likes table (V25), preserve legacy like endpoints, and batch seven-kind counts. React chat overlays use a portal to avoid the sticky blurred header's fixed-position containing block. Full local verify: 314 backend tests, 84 frontend tests, real browser and retention job acceptance; see docs/reports/community-discussions-messaging-2026-09-28.md. No main mutation is included.
 
 Movies and Speaking are not part of this increment.
-

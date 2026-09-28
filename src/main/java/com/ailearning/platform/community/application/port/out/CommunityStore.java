@@ -5,6 +5,7 @@ import com.ailearning.platform.community.api.contract.MemberView;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.contract.SpaceView;
 import com.ailearning.platform.community.domain.model.Comment;
+import com.ailearning.platform.community.domain.model.MediaAsset;
 import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
@@ -43,7 +44,13 @@ public interface CommunityStore {
 
     List<PostView> feed(UUID viewer, UUID spaceId, Instant before, UUID beforeId, int limit);
 
-    void createPost(Post post);
+    boolean createPost(Post post, MediaAsset media);
+
+    Optional<MediaAsset> postMedia(UUID postId);
+
+    List<PostView> pendingPosts(UUID spaceId, UUID viewer, int page);
+
+    boolean reviewPost(UUID spaceId, UUID postId, UUID actor, boolean approve);
 
     void removePost(UUID id);
 

@@ -94,6 +94,10 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/v1/community/**")
                                         .authenticated()
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/media/community/posts/*")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.HEAD, "/api/v1/media/community/posts/*")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/api/v1/practice/authoring/**",
                                                 "/api/v1/practice/reviews/**",

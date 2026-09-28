@@ -1,6 +1,6 @@
 # ADR-024: Community social spaces, moderation, media and chat
 
-Status: Accepted specification, 2026-09-28. Implementation is incremental; unchecked items are not delivered.
+Status: Implemented and locally verified, 2026-09-28. GitHub delivery gates remain pending until checked for the exact feature/main SHA.
 
 ## Product rules
 
@@ -20,11 +20,12 @@ Chat milestone: durable space-scoped text messages, ACTIVE members only (includi
 
 Never edit an applied Flyway migration, reset the DB, delete volumes or stage unrelated user changes. Separate migrations for moderation, media and chat. Existing API fields and published content remain compatible. JDBC remains an outbound persistence adapter; no JPA entities, empty Impl classes or speculative generic utilities are added.
 
-- [ ] Membership/private PAGE and pending-post policies, PostgreSQL migration and authorization tests.
-- [ ] Admin review queue and member pending-post feedback; cursor feed, counters, comment previews and responsive card hierarchy.
-- [ ] Validated image/video upload, authorized MinIO streaming, frontend upload/progress/lazy media and boundary/IDOR tests.
-- [ ] Space chat storage, authorization, retry/idempotency and responsive box.
-- [ ] Full backend verify, frontend test/build and responsive browser checks before any feature push/merge; exact branch CI green before main merge.
-- [ ] Preview backup before migrations; update a factual progress report, including unfinished work.
+- [x] Membership/private PAGE and pending-post policies, PostgreSQL migration and authorization tests.
+- [x] Admin review queue and member pending-post feedback; cursor feed, counters, comment previews and responsive card hierarchy.
+- [x] Size/MIME/signature-checked image/video upload, authorized MinIO streaming, frontend upload/progress/lazy media and boundary/IDOR tests. Full decode/scanning/transcoding is not delivered.
+- [x] Space chat storage, authorization, retry/idempotency and responsive box (visible/open polling).
+- [x] Full backend verify, frontend test/build and responsive browser checks before feature push.
+- [ ] Exact branch CI green before main merge, then main CI checked independently.
+- [x] Preview backup before migrations; factual report with unfinished work: docs/reports/community-social-spaces-2026-09-28.md.
 
 After community: movie viewing for English learning (source/licensing, subtitles and streaming design must be specified first). Do not silently increase the 10 MB user-upload limit or seed pirated movies. Managed Listening audio (ADR-023), mentor prompt correction, server exam timing/resume and learning analytics remain tracked work; Speaking stays out of scope.

@@ -9,5 +9,10 @@ public record Post(
         UUID spaceId,
         UUID sharedPostId,
         String body,
-        boolean active,
-        Instant createdAt) {}
+        UUID mediaId,
+        PostStatus status,
+        Instant createdAt) {
+    public boolean active() {
+        return status == PostStatus.ACTIVE;
+    }
+}

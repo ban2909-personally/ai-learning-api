@@ -2,6 +2,7 @@ package com.ailearning.platform.community.domain.policy;
 
 import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.Membership;
+import com.ailearning.platform.community.domain.model.PostStatus;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.model.SpaceKind;
 import com.ailearning.platform.community.domain.model.SpaceVisibility;
@@ -18,10 +19,8 @@ public class CommunityPolicy {
                 || description == null
                 || description.length() > 2000
                 || kind == null
-                || visibility == null
-                || (kind == SpaceKind.PAGE && visibility != SpaceVisibility.PUBLIC)) {
-            throw badRequest(
-                    "invalid_space", "Tên cộng đồng cần 3–120 ký tự; page phải công khai.");
+                || visibility == null) {
+            throw badRequest("invalid_space", "Tên cộng đồng cần 3–120 ký tự.");
         }
     }
 
@@ -49,18 +48,30 @@ public class CommunityPolicy {
 
     public void requirePosting(Space space, Membership member) {
         if (space == null) return;
-        if (space.kind() == SpaceKind.PAGE) {
-            requireManager(member);
-        } else if (member == null || !member.active()) {
+        if (member == null || !member.active()) {
             throw denied("space_membership_required", "Hãy tham gia nhóm trước khi đăng bài.");
         }
     }
 
     public void requireInteraction(Space space, Membership member) {
+        requireVisible(space, member);
         if (space != null
                 && space.kind() == SpaceKind.GROUP
                 && (member == null || !member.active())) {
             throw denied("space_membership_required", "Hãy tham gia nhóm trước khi tương tác.");
+        }
+    }
+
+    public PostStatus newPostStatus(Space space, Membership member) {
+        requirePosting(space, member);
+        return space == null || member.manager() ? PostStatus.ACTIVE : PostStatus.PENDING;
+    }
+
+    public void requireChat(Membership member) {
+        if (member == null || !member.active()) {
+            throw denied(
+                    "space_chat_membership_required",
+                    "Chỉ thành viên đang hoạt động được trò chuyện.");
         }
     }
 

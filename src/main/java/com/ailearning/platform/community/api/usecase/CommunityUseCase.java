@@ -39,6 +39,10 @@ public interface CommunityUseCase {
 
     PostView createPost(UUID actor, CreatePostCommand command);
 
+    List<PostView> pendingPosts(UUID actor, UUID spaceId, int page);
+
+    PostView reviewPost(UUID actor, UUID spaceId, UUID postId, boolean approve);
+
     PostView like(UUID actor, UUID postId, boolean liked);
 
     void removePost(UUID actor, UUID postId);

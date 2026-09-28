@@ -14,6 +14,7 @@ import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
+import com.ailearning.platform.community.domain.model.PostStatus;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.model.SpaceVisibility;
 import com.ailearning.platform.community.domain.policy.CommunityPolicy;
@@ -250,10 +251,18 @@ public class CommunityService implements CommunityUseCase {
     @Override
     public PostView post(UUID viewer, UUID id) {
         activeViewer(viewer);
-        Post post = postRequired(id);
+        Post post = store.findPost(id).orElseThrow(() -> missing("Không tìm thấy bài viết."));
         if (post.spaceId() != null) {
             Space space = spaceRequired(post.spaceId());
             policy.requireVisible(space, member(space.id(), viewer));
+        }
+        if (!post.active()) {
+            Membership membership = post.spaceId() == null ? null : member(post.spaceId(), viewer);
+            if ((post.status() != PostStatus.PENDING && post.status() != PostStatus.REJECTED)
+                    || (!post.authorId().equals(viewer)
+                            && (membership == null || !membership.manager()))) {
+                throw missing("Không tìm thấy bài viết.");
+            }
         }
         return postView(id, viewer);
     }
@@ -266,8 +275,8 @@ public class CommunityService implements CommunityUseCase {
                     "invalid_post", ErrorType.BAD_REQUEST, "Bài viết không hợp lệ.");
         String body = policy.postBody(command.body(), command.sharedPostId() != null);
         Space destination = command.spaceId() == null ? null : spaceRequired(command.spaceId());
-        policy.requirePosting(
-                destination, destination == null ? null : member(destination.id(), actor));
+        Membership membership = destination == null ? null : member(destination.id(), actor);
+        PostStatus status = policy.newPostStatus(destination, membership);
         if (command.sharedPostId() != null) {
             Post original = postRequired(command.sharedPostId());
             Space originalSpace =
@@ -275,16 +284,43 @@ public class CommunityService implements CommunityUseCase {
             policy.requireShareable(originalSpace);
         }
         UUID id = UUID.randomUUID();
-        store.createPost(
-                new Post(
-                        id,
-                        actor,
-                        command.spaceId(),
-                        command.sharedPostId(),
-                        body,
-                        true,
-                        Instant.now(clock)));
+        boolean created =
+                store.createPost(
+                        new Post(
+                                id,
+                                actor,
+                                command.spaceId(),
+                                command.sharedPostId(),
+                                body,
+                                null,
+                                status,
+                                Instant.now(clock)),
+                        null);
+        if (!created) throw conflict("Quyền đăng bài đã thay đổi. Hãy tải lại cộng đồng.");
         return postView(id, actor);
+    }
+
+    @Override
+    public List<PostView> pendingPosts(UUID actor, UUID spaceId, int page) {
+        actor(actor);
+        spaceRequired(spaceId);
+        policy.requireManager(member(spaceId, actor));
+        return store.pendingPosts(spaceId, actor, Math.max(0, page));
+    }
+
+    @Override
+    public PostView reviewPost(UUID actor, UUID spaceId, UUID postId, boolean approve) {
+        actor(actor);
+        spaceRequired(spaceId);
+        policy.requireManager(member(spaceId, actor));
+        Post post = store.findPost(postId).orElseThrow(() -> missing("Không tìm thấy bài viết."));
+        if (!spaceId.equals(post.spaceId()) || post.status() != PostStatus.PENDING) {
+            throw conflict("Bài viết không thuộc hàng đợi duyệt của cộng đồng này.");
+        }
+        if (!store.reviewPost(spaceId, postId, actor, approve)) {
+            throw conflict("Bài đã được xử lý hoặc quyền thành viên đã thay đổi.");
+        }
+        return postView(postId, actor);
     }
 
     @Override
@@ -314,6 +350,7 @@ public class CommunityService implements CommunityUseCase {
 
     @Override
     public List<CommentView> comments(UUID viewer, UUID postId, int page) {
+        postRequired(postId);
         post(viewer, postId);
         return store.comments(postId, Math.max(0, page));
     }

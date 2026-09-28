@@ -1,15 +1,18 @@
 package com.ailearning.platform.community.adapter.out.persistence;
 
 import com.ailearning.platform.community.api.contract.CommentView;
+import com.ailearning.platform.community.api.contract.MediaView;
 import com.ailearning.platform.community.api.contract.MemberView;
 import com.ailearning.platform.community.api.contract.PostView;
 import com.ailearning.platform.community.api.contract.SpaceView;
 import com.ailearning.platform.community.application.port.out.CommunityStore;
 import com.ailearning.platform.community.domain.model.Comment;
+import com.ailearning.platform.community.domain.model.MediaAsset;
 import com.ailearning.platform.community.domain.model.MemberRole;
 import com.ailearning.platform.community.domain.model.MemberStatus;
 import com.ailearning.platform.community.domain.model.Membership;
 import com.ailearning.platform.community.domain.model.Post;
+import com.ailearning.platform.community.domain.model.PostStatus;
 import com.ailearning.platform.community.domain.model.Space;
 import com.ailearning.platform.community.domain.model.SpaceKind;
 import com.ailearning.platform.community.domain.model.SpaceVisibility;
@@ -23,7 +26,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -47,7 +53,10 @@ SELECT p.id,p.author_id,author.display_name AS author_name,p.space_id,
   CASE WHEN original.status='ACTIVE' THEN original.body ELSE NULL END AS shared_body,
   CASE WHEN original.status='ACTIVE' THEN original_author.display_name ELSE NULL END
     AS shared_author_name,
-  p.created_at,
+  p.created_at,p.status,
+  media.id AS media_id,media.content_type AS media_type,media.size_bytes AS media_size,
+  CASE WHEN original.status='ACTIVE' THEN shared_media.id ELSE NULL END AS shared_media_id,
+  shared_media.content_type AS shared_media_type,shared_media.size_bytes AS shared_media_size,
   (SELECT count(*) FROM community_post_likes likes WHERE likes.post_id=p.id) AS like_count,
   (SELECT count(*) FROM community_comments comments
    WHERE comments.post_id=p.id AND comments.status='ACTIVE') AS comment_count,
@@ -55,12 +64,14 @@ SELECT p.id,p.author_id,author.display_name AS author_name,p.space_id,
    WHERE shares.shared_post_id=p.id AND shares.status='ACTIVE') AS share_count,
   EXISTS(SELECT 1 FROM community_post_likes mine
          WHERE mine.post_id=p.id AND mine.user_id=?::uuid) AS liked_by_viewer,
-  (p.space_id IS NULL OR space.visibility='PUBLIC') AS shareable
+  (p.status='ACTIVE' AND (p.space_id IS NULL OR space.visibility='PUBLIC')) AS shareable
 FROM community_posts p
 JOIN users author ON author.id=p.author_id
 LEFT JOIN community_spaces space ON space.id=p.space_id
 LEFT JOIN community_posts original ON original.id=p.shared_post_id
 LEFT JOIN users original_author ON original_author.id=original.author_id
+LEFT JOIN community_media_assets media ON media.id=p.media_id
+LEFT JOIN community_media_assets shared_media ON shared_media.id=original.media_id
 """;
 
     private static final String COMMENT_SELECT =
@@ -188,7 +199,9 @@ ON CONFLICT(space_id,user_id) DO NOTHING
     }
 
     @Override
+    @Transactional
     public void changeMemberStatus(UUID spaceId, UUID userId, MemberStatus status) {
+        lockSpace(spaceId);
         jdbc.update(
                 """
                 UPDATE community_members SET status=?,
@@ -202,7 +215,9 @@ ON CONFLICT(space_id,user_id) DO NOTHING
     }
 
     @Override
+    @Transactional
     public void changeMemberRole(UUID spaceId, UUID userId, MemberRole role) {
+        lockSpace(spaceId);
         jdbc.update(
                 """
                 UPDATE community_members SET role=? WHERE space_id=? AND user_id=?
@@ -214,7 +229,9 @@ ON CONFLICT(space_id,user_id) DO NOTHING
     }
 
     @Override
+    @Transactional
     public void removeMember(UUID spaceId, UUID userId) {
+        lockSpace(spaceId);
         jdbc.update(
                 "DELETE FROM community_members WHERE space_id=? AND user_id=? AND role<>'OWNER'",
                 spaceId,
@@ -229,12 +246,12 @@ ON CONFLICT(space_id,user_id) DO NOTHING
 
     @Override
     public Optional<PostView> postView(UUID id, UUID viewer) {
-        return jdbc
-                .query(
-                        POST_SELECT + " WHERE p.id=? AND p.status='ACTIVE'",
-                        this::postView,
-                        viewer,
-                        id)
+        return withPreviews(
+                        jdbc.query(
+                                POST_SELECT + " WHERE p.id=? AND p.status<>'REMOVED'",
+                                this::postView,
+                                viewer,
+                                id))
                 .stream()
                 .findFirst();
     }
@@ -265,23 +282,138 @@ WHERE p.status='ACTIVE'
         }
         query.append(" ORDER BY p.created_at DESC,p.id DESC LIMIT ?");
         parameters.add(limit);
-        return jdbc.query(query.toString(), this::postView, parameters.toArray());
+        return withPreviews(jdbc.query(query.toString(), this::postView, parameters.toArray()));
     }
 
     @Override
-    public void createPost(Post post) {
-        jdbc.update(
-                """
-INSERT INTO community_posts(id,author_id,space_id,shared_post_id,body,status,created_at,updated_at)
-VALUES (?,?,?,?,?,'ACTIVE',?,?)
+    @Transactional
+    public boolean createPost(Post post, MediaAsset media) {
+        if (post.spaceId() != null) {
+            lockSpace(post.spaceId());
+            Membership current = membership(post.spaceId(), post.authorId()).orElse(null);
+            if (current == null || !current.active() || (post.active() && !current.manager()))
+                return false;
+        }
+        if (media != null) {
+            jdbc.update(
+                    """
+INSERT INTO community_media_assets(id,owner_id,object_key,content_type,size_bytes,etag)
+VALUES (?,?,?,?,?,?)
 """,
-                post.id(),
-                post.authorId(),
-                post.spaceId(),
-                post.sharedPostId(),
-                post.body(),
-                Timestamp.from(post.createdAt()),
-                Timestamp.from(post.createdAt()));
+                    media.id(),
+                    media.ownerId(),
+                    media.objectKey(),
+                    media.contentType(),
+                    media.sizeBytes(),
+                    media.etag());
+        }
+        return jdbc.update(
+                        """
+INSERT INTO community_posts(id,author_id,space_id,shared_post_id,body,media_id,status,created_at,updated_at)
+VALUES (?,?,?,?,?,?,?,?,?)
+""",
+                        post.id(),
+                        post.authorId(),
+                        post.spaceId(),
+                        post.sharedPostId(),
+                        post.body(),
+                        post.mediaId(),
+                        post.status().name(),
+                        Timestamp.from(post.createdAt()),
+                        Timestamp.from(post.createdAt()))
+                == 1;
+    }
+
+    @Override
+    public List<PostView> pendingPosts(UUID spaceId, UUID viewer, int page) {
+        return jdbc.query(
+                POST_SELECT
+                        + """
+WHERE p.space_id=? AND p.status='PENDING'
+  AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
+    AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
+ORDER BY p.created_at,p.id LIMIT 20 OFFSET ?
+""",
+                this::postView,
+                viewer,
+                spaceId,
+                viewer,
+                (long) page * 20);
+    }
+
+    @Override
+    @Transactional
+    public boolean reviewPost(UUID spaceId, UUID postId, UUID actor, boolean approve) {
+        lockSpace(spaceId);
+        return jdbc.update(
+                        """
+                        UPDATE community_posts p SET status=?,updated_at=CURRENT_TIMESTAMP
+                        WHERE p.id=? AND p.space_id=? AND p.status='PENDING'
+                          AND EXISTS (SELECT 1 FROM community_members m WHERE m.space_id=p.space_id
+                            AND m.user_id=? AND m.status='ACTIVE' AND m.role IN ('OWNER','ADMIN'))
+                          AND (?=false OR EXISTS (SELECT 1 FROM community_members author
+                            WHERE author.space_id=p.space_id AND author.user_id=p.author_id
+                            AND author.status='ACTIVE'))
+                        """,
+                        approve ? "ACTIVE" : "REJECTED",
+                        postId,
+                        spaceId,
+                        actor,
+                        approve)
+                == 1;
+    }
+
+    private void lockSpace(UUID spaceId) {
+        jdbc.queryForObject(
+                "SELECT id FROM community_spaces WHERE id=? FOR UPDATE", UUID.class, spaceId);
+    }
+
+    @Override
+    public Optional<MediaAsset> postMedia(UUID postId) {
+        return jdbc
+                .query(
+                        """
+                        SELECT media.* FROM community_media_assets media
+                        JOIN community_posts p ON p.media_id=media.id WHERE p.id=?
+                        """,
+                        (rs, row) ->
+                                new MediaAsset(
+                                        rs.getObject("id", UUID.class),
+                                        rs.getObject("owner_id", UUID.class),
+                                        rs.getString("object_key"),
+                                        rs.getString("content_type"),
+                                        rs.getLong("size_bytes"),
+                                        rs.getString("etag")),
+                        postId)
+                .stream()
+                .findFirst();
+    }
+
+    private List<PostView> withPreviews(List<PostView> posts) {
+        if (posts.isEmpty()) return posts;
+        Map<UUID, List<CommentView>> previews = new HashMap<>();
+        String placeholders = String.join(",", Collections.nCopies(posts.size(), "?"));
+        String query =
+                """
+SELECT * FROM (
+  SELECT comment.id,comment.post_id,comment.parent_id,comment.author_id,
+    author.display_name AS author_name,comment.body,false AS removed,
+    comment.created_at, row_number() OVER (
+      PARTITION BY comment.post_id ORDER BY comment.created_at DESC,comment.id DESC
+    ) AS preview_position
+  FROM community_comments comment JOIN users author ON author.id=comment.author_id
+  WHERE comment.status='ACTIVE' AND comment.parent_id IS NULL AND comment.post_id IN (
+"""
+                        + placeholders
+                        + ") ) preview WHERE preview_position<=2 ORDER BY created_at,id";
+        for (CommentView comment :
+                jdbc.query(
+                        query, this::mapCommentView, posts.stream().map(PostView::id).toArray())) {
+            previews.computeIfAbsent(comment.postId(), ignored -> new ArrayList<>()).add(comment);
+        }
+        return posts.stream()
+                .map(post -> post.withCommentPreview(previews.getOrDefault(post.id(), List.of())))
+                .toList();
     }
 
     @Override
@@ -386,7 +518,8 @@ VALUES (?,?,?,?,?,'ACTIVE',?)
                 rs.getObject("space_id", UUID.class),
                 rs.getObject("shared_post_id", UUID.class),
                 rs.getString("body"),
-                "ACTIVE".equals(rs.getString("status")),
+                rs.getObject("media_id", UUID.class),
+                PostStatus.valueOf(rs.getString("status")),
                 rs.getTimestamp("created_at").toInstant());
     }
 
@@ -406,7 +539,21 @@ VALUES (?,?,?,?,?,'ACTIVE',?)
                 rs.getLong("comment_count"),
                 rs.getLong("share_count"),
                 rs.getBoolean("liked_by_viewer"),
-                rs.getBoolean("shareable"));
+                rs.getBoolean("shareable"),
+                PostStatus.valueOf(rs.getString("status")),
+                List.of(),
+                rs.getObject("media_id", UUID.class) == null
+                        ? null
+                        : new MediaView(
+                                rs.getObject("media_id", UUID.class),
+                                rs.getString("media_type"),
+                                rs.getLong("media_size")),
+                rs.getObject("shared_media_id", UUID.class) == null
+                        ? null
+                        : new MediaView(
+                                rs.getObject("shared_media_id", UUID.class),
+                                rs.getString("shared_media_type"),
+                                rs.getLong("shared_media_size")));
     }
 
     private Comment comment(ResultSet rs, int row) throws SQLException {

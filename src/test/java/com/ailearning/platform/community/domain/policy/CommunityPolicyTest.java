@@ -52,11 +52,12 @@ class CommunityPolicyTest {
     }
 
     @Test
-    void pagePublishingAndGroupParticipationHaveDifferentRules() {
+    void activeMembersCanSubmitPostsButNonMembersCannot() {
         Space page = space(SpaceKind.PAGE, SpaceVisibility.PUBLIC);
         Space group = space(SpaceKind.GROUP, SpaceVisibility.PUBLIC);
         Membership regular = member(MemberRole.MEMBER, MemberStatus.ACTIVE);
-        assertThrows(BusinessException.class, () -> policy.requirePosting(page, regular));
+        assertDoesNotThrow(() -> policy.requirePosting(page, regular));
+        assertThrows(BusinessException.class, () -> policy.requirePosting(page, null));
         assertDoesNotThrow(
                 () -> policy.requirePosting(page, member(MemberRole.OWNER, MemberStatus.ACTIVE)));
         assertDoesNotThrow(() -> policy.requirePosting(group, regular));
@@ -83,15 +84,39 @@ class CommunityPolicyTest {
     }
 
     @Test
-    void privatePostsCannotBeSharedAndPageMustBePublic() {
+    void managersPublishDirectlyButMembersAwaitReviewAndChatHasIndependentMembershipPolicy() {
+        Space group = space(SpaceKind.GROUP, SpaceVisibility.PUBLIC);
+        assertEquals(
+                com.ailearning.platform.community.domain.model.PostStatus.ACTIVE,
+                policy.newPostStatus(null, null));
+        assertEquals(
+                com.ailearning.platform.community.domain.model.PostStatus.ACTIVE,
+                policy.newPostStatus(group, member(MemberRole.OWNER, MemberStatus.ACTIVE)));
+        assertEquals(
+                com.ailearning.platform.community.domain.model.PostStatus.PENDING,
+                policy.newPostStatus(group, member(MemberRole.MEMBER, MemberStatus.ACTIVE)));
+        assertDoesNotThrow(
+                () -> policy.requireChat(member(MemberRole.MEMBER, MemberStatus.ACTIVE)));
+        assertThrows(
+                BusinessException.class,
+                () -> policy.requireChat(member(MemberRole.MEMBER, MemberStatus.PENDING)));
+        assertThrows(BusinessException.class, () -> policy.requireChat(null));
+    }
+
+    @Test
+    void privatePostsCannotBeSharedAndPrivatePagesAreSupported() {
         assertThrows(
                 BusinessException.class,
                 () -> policy.requireShareable(space(SpaceKind.GROUP, SpaceVisibility.PRIVATE)));
         assertDoesNotThrow(
                 () -> policy.requireShareable(space(SpaceKind.GROUP, SpaceVisibility.PUBLIC)));
+        assertDoesNotThrow(
+                () -> policy.validateSpace("Page", "", SpaceKind.PAGE, SpaceVisibility.PRIVATE));
         assertThrows(
                 BusinessException.class,
-                () -> policy.validateSpace("Page", "", SpaceKind.PAGE, SpaceVisibility.PRIVATE));
+                () ->
+                        policy.requireInteraction(
+                                space(SpaceKind.PAGE, SpaceVisibility.PRIVATE), null));
         assertEquals("hello", policy.postBody(" hello ", false));
         assertThrows(BusinessException.class, () -> policy.commentBody(" "));
     }

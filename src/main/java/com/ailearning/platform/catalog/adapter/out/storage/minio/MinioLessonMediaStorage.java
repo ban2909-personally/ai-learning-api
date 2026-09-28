@@ -1,16 +1,18 @@
 package com.ailearning.platform.catalog.adapter.out.storage.minio;
 
 import com.ailearning.platform.catalog.application.port.out.LessonMediaStorage;
-import com.ailearning.platform.catalog.config.MinioStorageProperties;
 import com.ailearning.platform.catalog.domain.model.LessonMediaAsset;
+import com.ailearning.platform.platform.configuration.storage.MinioStorageProperties;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
+
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -27,15 +29,18 @@ public class MinioLessonMediaStorage implements LessonMediaStorage {
     }
 
     @Override
-    public LessonMediaAsset store(String objectKey, String contentType, long sizeBytes, InputStream content) {
+    public LessonMediaAsset store(
+            String objectKey, String contentType, long sizeBytes, InputStream content) {
         try {
             ensureBucket();
-            var response = client.putObject(PutObjectArgs.builder()
-                    .bucket(properties.bucket())
-                    .object(objectKey)
-                    .contentType(contentType)
-                    .stream(content, sizeBytes, -1L)
-                    .build());
+            var response =
+                    client.putObject(
+                            PutObjectArgs.builder()
+                                    .bucket(properties.bucket())
+                                    .object(objectKey)
+                                    .contentType(contentType)
+                                    .stream(content, sizeBytes, -1L)
+                                    .build());
             return new LessonMediaAsset(objectKey, contentType, sizeBytes, response.etag());
         } catch (Exception exception) {
             throw unavailable(exception);
@@ -45,12 +50,13 @@ public class MinioLessonMediaStorage implements LessonMediaStorage {
     @Override
     public InputStream open(String objectKey, long offset, long length) {
         try {
-            return client.getObject(GetObjectArgs.builder()
-                    .bucket(properties.bucket())
-                    .object(objectKey)
-                    .offset(offset)
-                    .length(length)
-                    .build());
+            return client.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(properties.bucket())
+                            .object(objectKey)
+                            .offset(offset)
+                            .length(length)
+                            .build());
         } catch (Exception exception) {
             throw unavailable(exception);
         }
@@ -59,10 +65,11 @@ public class MinioLessonMediaStorage implements LessonMediaStorage {
     @Override
     public void delete(String objectKey) {
         try {
-            client.removeObject(RemoveObjectArgs.builder()
-                    .bucket(properties.bucket())
-                    .object(objectKey)
-                    .build());
+            client.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(properties.bucket())
+                            .object(objectKey)
+                            .build());
         } catch (Exception exception) {
             throw unavailable(exception);
         }
@@ -72,7 +79,8 @@ public class MinioLessonMediaStorage implements LessonMediaStorage {
         if (bucketReady) {
             return;
         }
-        boolean exists = client.bucketExists(BucketExistsArgs.builder().bucket(properties.bucket()).build());
+        boolean exists =
+                client.bucketExists(BucketExistsArgs.builder().bucket(properties.bucket()).build());
         if (!exists) {
             client.makeBucket(MakeBucketArgs.builder().bucket(properties.bucket()).build());
         }
@@ -80,11 +88,11 @@ public class MinioLessonMediaStorage implements LessonMediaStorage {
     }
 
     private BusinessException unavailable(Exception cause) {
-        var exception = new BusinessException(
-                "media_storage_unavailable",
-                ErrorType.SERVICE_UNAVAILABLE,
-                "Kho nội dung hiện không khả dụng. Vui lòng thử lại sau."
-        );
+        var exception =
+                new BusinessException(
+                        "media_storage_unavailable",
+                        ErrorType.SERVICE_UNAVAILABLE,
+                        "Kho nội dung hiện không khả dụng. Vui lòng thử lại sau.");
         exception.initCause(cause);
         return exception;
     }

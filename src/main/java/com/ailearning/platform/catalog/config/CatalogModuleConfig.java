@@ -7,10 +7,10 @@ import com.ailearning.platform.catalog.application.port.out.LessonMediaCatalog;
 import com.ailearning.platform.catalog.application.port.out.LessonMediaStorage;
 import com.ailearning.platform.catalog.application.port.out.PopularCatalogCache;
 import com.ailearning.platform.catalog.application.service.impl.CatalogService;
-import com.ailearning.platform.catalog.application.service.impl.LessonMediaService;
 import com.ailearning.platform.catalog.application.service.impl.LessonMediaDeliveryService;
+import com.ailearning.platform.catalog.application.service.impl.LessonMediaService;
 import com.ailearning.platform.catalog.domain.policy.LessonMediaPolicy;
-import io.minio.MinioClient;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,8 +21,7 @@ public class CatalogModuleConfig {
             CatalogStore store,
             CurriculumStore curricula,
             LessonContentStore lessons,
-            PopularCatalogCache popularCache
-    ) {
+            PopularCatalogCache popularCache) {
         return new CatalogService(store, curricula, lessons, popularCache);
     }
 
@@ -30,28 +29,16 @@ public class CatalogModuleConfig {
     LessonMediaService lessonMediaService(
             LessonMediaCatalog catalog,
             LessonMediaStorage storage,
-            LessonMediaProperties properties
-    ) {
-        var policy = new LessonMediaPolicy(
-                properties.maxUploadSize().toBytes(),
-                properties.allowedContentTypes()
-        );
+            LessonMediaProperties properties) {
+        var policy =
+                new LessonMediaPolicy(
+                        properties.maxUploadSize().toBytes(), properties.allowedContentTypes());
         return new LessonMediaService(catalog, storage, policy);
     }
 
     @Bean
     LessonMediaDeliveryService lessonMediaDeliveryService(
-            LessonMediaCatalog catalog,
-            LessonMediaStorage storage
-    ) {
+            LessonMediaCatalog catalog, LessonMediaStorage storage) {
         return new LessonMediaDeliveryService(catalog, storage);
-    }
-
-    @Bean
-    MinioClient minioClient(MinioStorageProperties properties) {
-        return MinioClient.builder()
-                .endpoint(properties.endpoint())
-                .credentials(properties.accessKey(), properties.secretKey())
-                .build();
     }
 }

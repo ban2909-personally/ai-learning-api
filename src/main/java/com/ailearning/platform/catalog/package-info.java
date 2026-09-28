@@ -4,6 +4,7 @@
             "sharedkernel::error",
             "sharedkernel::pagination",
             "identity::access",
-            "identity::contract"
+            "identity::contract",
+            "platform::storage"
         })
 package com.ailearning.platform.catalog;

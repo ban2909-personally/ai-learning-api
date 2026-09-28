@@ -38,6 +38,6 @@ Before preview migration, back up the existing preview database and verify the d
 - [x] Role-scoped Writing queue and atomic review authorization for new series.
 - [x] Lazy responsive studio/editor, save/conflict/publish/clone flows and unit tests.
 - [x] Full backend verify, frontend build/tests and phone/tablet/desktop browser acceptance.
-- [ ] Feature commits → push branch → exact CI green → main merge/push → main CI evidence.
+- [x] Feature commits → push branch → exact CI green → main merge/push → main CI evidence (backend `5783d32`, frontend `fe9ddb9`; report dated 2026-09-28).
 
 The next increments remain managed MinIO audio (<10 MB), server-enforced timing/resume/history, fuller original/licensed practice banks and analytics. This feature does not redefine those unfinished requirements as complete.

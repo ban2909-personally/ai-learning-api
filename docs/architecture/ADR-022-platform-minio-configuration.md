@@ -19,11 +19,11 @@ This is a small prerequisite increment, not a claim that exam audio upload alrea
 
 ## Migration and verification checklist
 
-- [ ] Move neutral properties/client configuration and declare `platform::storage`.
-- [ ] Remove duplicate catalog client configuration; update only adapter/configuration imports.
-- [ ] Configuration binding, credential redaction and invalid-settings tests.
-- [ ] Existing Testcontainers MinIO integration, module boundaries and full backend verify.
-- [ ] Preserve user changes, unchanged pom.xml, database behavior and upload limits.
+- [x] Move neutral properties/client configuration and declare `platform::storage`.
+- [x] Remove duplicate catalog client configuration; update only adapter/configuration imports.
+- [x] Configuration binding, credential redaction and invalid-settings tests.
+- [x] Existing Testcontainers MinIO integration, module boundaries and full backend verify: 266 tests, 0 failures/errors/skips.
+- [x] Preserve user changes, unchanged pom.xml, database behavior and upload limits.
 - [ ] Feature commit/push → exact CI green → merge/push main → main CI evidence.
 
 ## Next product increment

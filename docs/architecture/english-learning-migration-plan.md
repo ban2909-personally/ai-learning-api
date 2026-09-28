@@ -26,6 +26,7 @@ Product direction: English learning, practice and community. Preserve the modula
 - [ ] Independent reusable question bank, richer filters/import and full-length exam content.
 - [ ] Managed MinIO audio references with sub-10 MB limits, validated media types and authenticated author permissions.
 - [x] Original preview mini-practice material; no copied PREP questions or branding.
+- [x] Authoring/revision feature and multipart frontend regression delivered to CI-green main (backend `5783d32`, frontend `fe9ddb9`).
 - [ ] Full-length original/licensed banks and an explicit content provenance process.
 
 ## 4. Exam integrity and feedback

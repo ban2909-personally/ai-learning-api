@@ -1,6 +1,6 @@
 # Exam authoring and immutable revisions · 2026-09-28
 
-Status: backend/frontend implemented and verified locally on `feature/exam-authoring-revisions`; feature/main CI delivery is the remaining gate.
+Status: backend/frontend implemented, locally verified and merged/pushed to main after exact feature CI passed. Both main CI runs passed.
 
 ## Đã triển khai
 
@@ -12,6 +12,7 @@ Status: backend/frontend implemented and verified locally on `feature/exam-autho
 - Chấm Writing cho đề mới giới hạn theo tác giả, hoặc LEADER/ADMIN. Đề hệ thống cũ giữ behavior staff review trước đây. Không tự chấm bài của mình.
 - Public catalog chỉ đọc summaries trong một SQL query, không tải toàn bộ câu hỏi/đáp án. HTTP công khai và payload làm bài vẫn không có answer key hoặc explanation.
 - Lazy routes `/instructor/exams` và `/instructor/exams/:id`; menu staff nhóm dưới “Kho học liệu”. Responsive và trạng thái chưa lưu/xung đột rõ ràng.
+- Đề có nhiều phần cùng kỹ năng: catalog không lặp chip; kết quả cộng tổng đúng theo kỹ năng nhưng vẫn chọn từng phần độc lập. Tab nhiều phần cuộn trong vùng riêng, không gây tràn ngang toàn trang.
 - Domain/application framework-free, use-case/store ports có trách nhiệm thật; JDBC transaction ở adapter. Không thêm JPA entity, repository Impl rỗng hoặc dependency mới vào pom.xml.
 
 ## Spec và giới hạn
@@ -26,7 +27,7 @@ ADR-021 được viết/commit trước code. Giới hạn server: 20 phần, 25
 - JUnit/Mockito policy/use-case tests; MockMvc + Security Test; PostgreSQL Testcontainers; ArchUnit và isolated Spring Modulith assessment test.
 - Migration regression: V17 chứa bài làm, đáp án và Writing rubric → V18 → phát hành phiên bản thay key → kết quả cũ không đổi.
 - Concurrency: cùng expectedVersion chỉ một save thành công; cùng publication chỉ một clone thành công. Lỗi persistence save/publication rollback cả version, nội dung và archive trạng thái cũ.
-- Frontend `pnpm build`, **55 tests / 24 suites**, `pnpm test:e2e` qua. Browser smoke có studio/editor/reviewer ở 320, 768, 1440px, không tràn ngang.
+- Frontend `pnpm build`, **57 tests / 24 suites**, `pnpm test:e2e` qua. Browser smoke có studio/editor/reviewer và kết quả đề 20 phần ở 320, 768, 1440px, không tràn ngang.
 - API-backed preview browser: giảng viên lưu/gửi duyệt, leader thấy read-only keys và phát hành; public payload kiểm tra không lộ key/explanation. Bootstrap session dùng token thật từ local login, không mock assessment APIs. CDP nhập text và DOM activation dùng cho thao tác; đây không phải chứng nhận pointer-only hoặc cross-browser acceptance.
 - Screenshot desktop/phone đã kiểm tra trực quan trong `target/preview-backups/`.
 - Local full verify vẫn có warning cleanup Hikari/Testcontainers và thông báo Surefire đóng fork sau timeout khi JVM exit. Maven exit 0 và XML có 0 test errors; không che/skip test để né warning. Warning connection-closed cũng có ở lượt verify trước phase này. CI là gate độc lập trước merge.
@@ -78,8 +79,17 @@ Frontend dưới `E:/ai-learning-web/`:
 - `ExamStudioPage.test.tsx`, `ExamEditorPage.test.tsx` trong cùng feature folder.
 - `src/app/App.tsx`, `src/components/AppHeader.tsx`, `src/styles.css`
 - `scripts/selenium-smoke.mjs`
+- `src/features/practice/PracticeCatalogPage.tsx`, `PracticeCatalogPage.test.tsx`, `PracticeResultPage.tsx`, `PracticeResultPage.test.tsx`, `practice.css`: multipart regression.
 
 Docs: ADR-021, report này, migration plan; cập nhật ADR-020 và report phase trước để ghi delivery baseline CI-green main `c05c901` / `f78a48c`.
+
+## Git delivery evidence
+
+- Backend feature `bf1fde32482fe25cfaf18867afde52f7414d084b`: [CI 36373316650](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36373316650), **11/11 jobs success**.
+- Frontend feature `adee8545abff92950d193a0618428ac2110f724c`: [CI 36374059416](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36374059416), **success** (includes multipart fix; not relying on the previous commit's green run).
+- Backend main merge `5783d320c8269c429bf146df7ea1a65512d6dcd6`: [CI 36374163455](https://github.com/ban2909-personally/ai-learning-api/actions/runs/36374163455), **11/11 jobs success**.
+- Frontend main merge `fe9ddb99522535e4338e590d4f852683cf9b657e`: [CI 36374172058](https://github.com/ban2909-personally/ai-learning-web/actions/runs/36374172058), **success**.
+- Both merge commit trees exactly match the tested feature tips. No force push, pull or stash; pre-existing performance changes remained outside the commits.
 
 ## Bảo toàn và việc còn lại
 

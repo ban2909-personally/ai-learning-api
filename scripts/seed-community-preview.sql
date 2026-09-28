@@ -12,14 +12,14 @@ INSERT INTO community_spaces(id,owner_id,kind,visibility,name,description,create
 SELECT md5('community-preview-space-' || slug)::uuid, users.id, kind, visibility,
        name, description, CURRENT_TIMESTAMP - age, CURRENT_TIMESTAMP - age
 FROM (VALUES
-    ('java', 'lecture@demo.local', 'GROUP', 'PUBLIC', 'Cùng học Java & Spring',
-     'Hỏi đáp về Java, Spring Boot và cách thiết kế backend dễ bảo trì.', interval '3 days'),
-    ('frontend', 'student@demo.local', 'GROUP', 'PUBLIC', 'Frontend thực chiến',
-     'Chia sẻ kinh nghiệm React, TypeScript và thiết kế giao diện thân thiện.', interval '2 days'),
-    ('mentor', 'leader@demo.local', 'GROUP', 'PRIVATE', 'Câu lạc bộ mentor',
-     'Nhóm riêng dành cho những người cùng hướng dẫn và phản biện bài học.', interval '1 day'),
-    ('academy', 'admin@demo.local', 'PAGE', 'PUBLIC', 'AI Learning · Góc chia sẻ',
-     'Thông báo, lộ trình và những câu chuyện học tập từ cộng đồng.', interval '4 days')
+    ('java', 'lecture@demo.local', 'GROUP', 'PUBLIC', 'English Listening Circle',
+     'Cùng luyện nghe hội thoại, thông báo và chia sẻ cách bắt từ khóa.', interval '3 days'),
+    ('frontend', 'student@demo.local', 'GROUP', 'PUBLIC', 'Reading & Vocabulary Club',
+     'Cùng đọc email tiếng Anh và ghi nhớ từ vựng theo ngữ cảnh.', interval '2 days'),
+    ('mentor', 'leader@demo.local', 'GROUP', 'PRIVATE', 'English Writing Lab',
+     'Nhóm riêng để góp ý cách viết email và diễn đạt ý tưởng bằng tiếng Anh.', interval '1 day'),
+    ('academy', 'admin@demo.local', 'PAGE', 'PUBLIC', 'AI Learning · English Hub',
+     'Thông báo, lộ trình và những câu chuyện học tiếng Anh từ cộng đồng.', interval '4 days')
 ) AS demo(slug,email,kind,visibility,name,description,age)
 JOIN users ON users.email=demo.email
 ON CONFLICT(id) DO NOTHING;
@@ -43,11 +43,11 @@ SELECT md5('community-preview-post-' || n)::uuid,users.id,
        CASE WHEN space='' THEN NULL ELSE md5('community-preview-space-' || space)::uuid END,
        body,CURRENT_TIMESTAMP - age,CURRENT_TIMESTAMP - age
 FROM (VALUES
-    (1,'admin@demo.local','academy','Chào mừng đến với AI Learning! Bảng tin này là nơi mọi người cùng hỏi, cùng giải đáp và chia sẻ điều vừa học được. Hãy bắt đầu bằng một câu hỏi nhỏ hôm nay.',interval '2 hours'),
-    (2,'lecture@demo.local','java','Trong Spring Boot, hãy bắt đầu từ một use case rõ ràng rồi mới chọn adapter. Khi thay đổi database, logic nghiệp vụ vẫn nên đứng vững. Bạn đang gặp khó ở phần nào?',interval '95 minutes'),
-    (3,'student@demo.local','','Mình vừa học về HTTP 401 và 403: 401 là chưa được xác thực; 403 là đã xác định người gọi nhưng không có quyền. Viết lại bằng lời của mình giúp nhớ lâu hơn!',interval '65 minutes'),
-    (4,'student@demo.local','frontend','Một mẹo nhỏ khi học React: thử viết component nhỏ có trạng thái rõ ràng, test một hành vi trước khi thêm thật nhiều tính năng. Mọi người có workflow nào hay?',interval '38 minutes'),
-    (5,'guest@demo.local','','Chào mọi người! Mình mới tham gia và muốn tìm lộ trình học Java từ đầu. Nên bắt đầu từ những kiến thức nào?',interval '20 minutes')
+    (1,'admin@demo.local','academy','Chào mừng đến với AI Learning! Đây là nơi cùng hỏi, cùng giải đáp và chia sẻ hành trình học tiếng Anh. Hôm nay bạn đang luyện kỹ năng nào?',interval '2 hours'),
+    (2,'lecture@demo.local','java','Khi luyện nghe thông báo, hãy nghe ý chính trước rồi mới ghi thời gian, địa điểm và tên riêng. Bạn thường bỏ lỡ loại thông tin nào?',interval '95 minutes'),
+    (3,'student@demo.local','','Mình vừa học cụm “Could you clarify that?” để hỏi lại lịch sự trong cuộc họp. Đặt câu trong tình huống thật giúp nhớ lâu hơn!',interval '65 minutes'),
+    (4,'student@demo.local','frontend','Một mẹo luyện đọc email: xem dòng chủ đề, người gửi và yêu cầu hành động trước khi đọc từng câu. Mọi người có cách nào khác?',interval '38 minutes'),
+    (5,'guest@demo.local','','Chào mọi người! Mình mới bắt đầu học tiếng Anh công việc. Nên luyện nghe và từ vựng theo lộ trình nào?',interval '20 minutes')
 ) AS demo(n,email,space,body,age)
 JOIN users ON users.email=demo.email
 ON CONFLICT(id) DO NOTHING;
@@ -66,9 +66,9 @@ SELECT md5('community-preview-comment-' || n)::uuid,
        CASE WHEN parent=0 THEN NULL ELSE md5('community-preview-comment-' || parent)::uuid END,
        users.id,body,CURRENT_TIMESTAMP - age
 FROM (VALUES
-    (1,5,0,'lecture@demo.local','Bắt đầu với biến, hàm, kiểu dữ liệu và lập trình hướng đối tượng. Sau đó thử một dự án nhỏ trước khi học Spring.',interval '13 minutes'),
+    (1,5,0,'lecture@demo.local','Bắt đầu với hội thoại ngắn và 10 từ vựng theo chủ đề mỗi ngày. Sau đó thử đề luyện tập để biết mình hay sai ở đâu.',interval '13 minutes'),
     (2,5,1,'guest@demo.local','Cảm ơn thầy! Em sẽ thử theo lộ trình này.',interval '8 minutes'),
-    (3,4,0,'admin@demo.local','Viết test cho tương tác chính từ sớm sẽ giúp refactor tự tin hơn.',interval '21 minutes')
+    (3,4,0,'admin@demo.local','Đúng rồi! Sau khi làm bài, hãy xem lại giải thích cho cả câu trả lời đúng lẫn câu sai.',interval '21 minutes')
 ) AS demo(n,post,parent,email,body,age)
 JOIN users ON users.email=demo.email
 ON CONFLICT(id) DO NOTHING;

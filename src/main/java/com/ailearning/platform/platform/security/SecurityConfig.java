@@ -71,7 +71,9 @@ public class SecurityConfig {
                                                 HttpMethod.GET,
                                                 "/api/v1/courses",
                                                 "/api/v1/courses/**",
-                                                "/api/v1/categories")
+                                                "/api/v1/categories",
+                                                "/api/v1/practice/exams",
+                                                "/api/v1/practice/exams/*")
                                         .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.POST,
@@ -92,6 +94,10 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/v1/community/**")
                                         .authenticated()
+                                        .requestMatchers(
+                                                "/api/v1/practice/reviews/**",
+                                                "/api/v1/practice/attempts/*/writing/*/review")
+                                        .hasAnyRole("LECTURE", "INSTRUCTOR", "LEADER", "ADMIN")
                                         .requestMatchers("/api/v1/**")
                                         .hasAnyRole(
                                                 "STUDENT",

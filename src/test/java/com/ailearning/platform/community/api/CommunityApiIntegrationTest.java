@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -62,6 +63,246 @@ class CommunityApiIntegrationTest {
     private final UUID guest = UUID.fromString("31000000-0000-0000-0000-000000000001");
     private final UUID student = UUID.fromString("31000000-0000-0000-0000-000000000002");
     private final UUID lecturer = UUID.fromString("31000000-0000-0000-0000-000000000003");
+
+    @Test
+    void profileDefaultsAndOwnUpdatesKeepIdentitySecretsAndPrivateGraphHidden() throws Exception {
+        mvc.perform(get("/api/v1/community/people/" + guest + "/profile"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.bio").value(""))
+                .andExpect(jsonPath("$.profile.email").doesNotExist())
+                .andExpect(jsonPath("$.profile.roles").doesNotExist())
+                .andExpect(jsonPath("$.friendship.relationship").value("NONE"));
+        mvc.perform(get("/api/v1/community/friends")).andExpect(status().isUnauthorized());
+        String update =
+                """
+{"bio":"Hello English","location":"Hà Nội","website":"https://example.test","coverTheme":"ocean"}
+""";
+        mvc.perform(
+                        put("/api/v1/community/profile")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(update))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(
+                        put("/api/v1/community/profile")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(update))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profile.bio").value("Hello English"))
+                .andExpect(jsonPath("$.friendship.relationship").value("SELF"));
+        mvc.perform(get("/api/v1/community/people/" + student + "/profile"))
+                .andExpect(jsonPath("$.profile.bio").value(""));
+        mvc.perform(
+                        put("/api/v1/community/profile")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        update.replace(
+                                                "https://example.test", "javascript:alert(1)")))
+                .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE users SET status='DISABLED' WHERE id=?", guest);
+        mvc.perform(get("/api/v1/community/people/" + guest + "/profile"))
+                .andExpect(status().isNotFound());
+        mvc.perform(
+                        put("/api/v1/community/profile")
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(update))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void friendshipLifecycleRequiresRecipientDecisionAndRestrictsRequestVisibility()
+            throws Exception {
+        String path = "/api/v1/community/people/" + student + "/friendship";
+        mvc.perform(post(path)).andExpect(status().isUnauthorized());
+        mvc.perform(post(path).with(as(guest, "GUEST")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.relationship").value("OUTGOING"));
+        mvc.perform(post(path).with(as(guest, "GUEST"))).andExpect(status().isOk());
+        mvc.perform(post(path + "/accept").with(as(guest, "ADMIN")))
+                .andExpect(status().isForbidden());
+        mvc.perform(
+                        post("/api/v1/community/people/" + guest + "/friendship")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isConflict());
+        mvc.perform(post(path + "/accept").with(as(lecturer, "LECTURE")))
+                .andExpect(status().isNotFound());
+        mvc.perform(
+                        get("/api/v1/community/friends")
+                                .param("filter", "incoming")
+                                .with(as(student, "STUDENT")))
+                .andExpect(jsonPath("$.people.length()").value(1))
+                .andExpect(jsonPath("$.people[0].person.email").doesNotExist());
+        mvc.perform(
+                        get("/api/v1/community/friends")
+                                .param("filter", "incoming")
+                                .with(as(lecturer, "LECTURE")))
+                .andExpect(jsonPath("$.people").isEmpty());
+        mvc.perform(
+                        post("/api/v1/community/people/" + guest + "/friendship/accept")
+                                .with(as(student, "STUDENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.relationship").value("FRIENDS"));
+        mvc.perform(get("/api/v1/community/friends").with(as(guest, "GUEST")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.people.length()").value(1));
+        mvc.perform(delete(path).with(as(guest, "GUEST")))
+                .andExpect(jsonPath("$.relationship").value("NONE"));
+        mvc.perform(delete(path).with(as(guest, "GUEST"))).andExpect(status().isOk());
+        mvc.perform(
+                        post("/api/v1/community/people/" + guest + "/friendship")
+                                .with(as(guest, "GUEST")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/community/friends").param("page", "101").with(as(guest, "GUEST")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void friendshipCountsExcludeInactiveAccountsAndListsArePaginated() throws Exception {
+        for (UUID[] pair :
+                java.util.List.of(new UUID[] {guest, lecturer}, new UUID[] {student, lecturer})) {
+            mvc.perform(
+                            post("/api/v1/community/people/" + pair[1] + "/friendship")
+                                    .with(as(pair[0], "STUDENT")))
+                    .andExpect(status().isOk());
+            mvc.perform(
+                            post("/api/v1/community/people/" + pair[0] + "/friendship/accept")
+                                    .with(as(pair[1], "LECTURE")))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(
+                        get("/api/v1/community/people/" + student + "/profile")
+                                .with(as(guest, "GUEST")))
+                .andExpect(jsonPath("$.friendship.friendCount").value(1))
+                .andExpect(jsonPath("$.friendship.mutualFriendCount").value(1));
+        jdbc.update("UPDATE users SET status='DISABLED' WHERE id=?", lecturer);
+        mvc.perform(
+                        get("/api/v1/community/people/" + student + "/profile")
+                                .with(as(guest, "GUEST")))
+                .andExpect(jsonPath("$.friendship.friendCount").value(0))
+                .andExpect(jsonPath("$.friendship.mutualFriendCount").value(0));
+        for (int index = 0; index < 21; index++) {
+            UUID peer = UUID.randomUUID();
+            addUser(peer, "STUDENT", "friend" + index + "@example.test");
+            mvc.perform(
+                            post("/api/v1/community/people/" + peer + "/friendship")
+                                    .with(as(guest, "GUEST")))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(
+                        get("/api/v1/community/friends")
+                                .param("filter", "outgoing")
+                                .with(as(guest, "GUEST")))
+                .andExpect(jsonPath("$.people.length()").value(20))
+                .andExpect(jsonPath("$.nextPage").value(1));
+        mvc.perform(
+                        get("/api/v1/community/friends")
+                                .param("filter", "outgoing")
+                                .param("page", "1")
+                                .with(as(guest, "GUEST")))
+                .andExpect(jsonPath("$.people.length()").value(1))
+                .andExpect(jsonPath("$.nextPage").isEmpty());
+    }
+
+    @Test
+    void simultaneousCrossRequestsDoNotAutoAcceptOrDuplicatePairs() throws Exception {
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var ready = new java.util.concurrent.CountDownLatch(2);
+            var go = new java.util.concurrent.CountDownLatch(1);
+            var tasks =
+                    java.util.List.of(guest, student).stream()
+                            .map(
+                                    actor ->
+                                            executor.submit(
+                                                    () -> {
+                                                        ready.countDown();
+                                                        if (!go.await(
+                                                                10,
+                                                                java.util.concurrent.TimeUnit
+                                                                        .SECONDS))
+                                                            throw new IllegalStateException(
+                                                                    "Request barrier timed out");
+                                                        UUID peer =
+                                                                actor.equals(guest)
+                                                                        ? student
+                                                                        : guest;
+                                                        return mvc.perform(
+                                                                        post("/api/v1/community/people/"
+                                                                                        + peer
+                                                                                        + "/friendship")
+                                                                                .with(
+                                                                                        as(
+                                                                                                actor,
+                                                                                                "STUDENT")))
+                                                                .andReturn()
+                                                                .getResponse()
+                                                                .getStatus();
+                                                    }))
+                            .toList();
+            org.junit.jupiter.api.Assertions.assertTrue(
+                    ready.await(10, java.util.concurrent.TimeUnit.SECONDS));
+            go.countDown();
+            var codes = new java.util.ArrayList<Integer>();
+            for (var task : tasks) codes.add(task.get(20, java.util.concurrent.TimeUnit.SECONDS));
+            codes.sort(Integer::compareTo);
+            org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(200, 409), codes);
+        }
+        org.junit.jupiter.api.Assertions.assertEquals(
+                1,
+                jdbc.queryForObject(
+                        "SELECT count(*) FROM community_friendships WHERE status='PENDING'",
+                        Integer.class));
+    }
+
+    @Test
+    void idBasedChatDoesNotCreateOnReadAndRetainsConsentIdempotencyAndParticipantChecks()
+            throws Exception {
+        String peerPath = "/api/v1/community/direct/peers/" + student;
+        mvc.perform(get(peerPath).with(as(guest, "GUEST"))).andExpect(status().isNoContent());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                0,
+                jdbc.queryForObject(
+                        "SELECT count(*) FROM community_direct_conversations", Integer.class));
+        UUID client = UUID.randomUUID();
+        String body = "{\"clientId\":\"" + client + "\",\"body\":\"Hello from profile\"}";
+        String result =
+                mvc.perform(
+                                post(peerPath)
+                                        .with(as(guest, "GUEST"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(body))
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.status").value("REQUEST"))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String id = JsonPath.read(result, "$.id");
+        mvc.perform(
+                        post(peerPath)
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(id));
+        mvc.perform(
+                        post(peerPath)
+                                .with(as(guest, "GUEST"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body.replace("Hello from profile", "Different")))
+                .andExpect(status().isConflict());
+        mvc.perform(get(peerPath).with(as(guest, "GUEST"))).andExpect(jsonPath("$.id").value(id));
+        mvc.perform(
+                        get("/api/v1/community/direct/conversations/" + id + "/messages")
+                                .with(as(lecturer, "ADMIN")))
+                .andExpect(status().isNotFound());
+        mvc.perform(
+                        post("/api/v1/community/direct/conversations/" + id + "/decision")
+                                .with(as(student, "STUDENT"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"accept\":true}"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
 
     @Test
     void discoveryMatchesOneCharacterAccentsAndRanksPrefixWithoutExposingIdentitySecrets()

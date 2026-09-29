@@ -6,10 +6,12 @@ import com.ailearning.platform.community.api.usecase.CommunityUseCase;
 import com.ailearning.platform.community.api.usecase.DirectChatUseCase;
 import com.ailearning.platform.community.api.usecase.MediaRetentionUseCase;
 import com.ailearning.platform.community.api.usecase.PollUseCase;
+import com.ailearning.platform.community.api.usecase.SocialProfileUseCase;
 import com.ailearning.platform.community.api.usecase.SpaceChatUseCase;
 import com.ailearning.platform.community.application.port.out.CommunityMediaStorage;
 import com.ailearning.platform.community.application.port.out.CommunityStore;
 import com.ailearning.platform.community.application.port.out.DirectChatStore;
+import com.ailearning.platform.community.application.port.out.FriendshipStore;
 import com.ailearning.platform.community.application.port.out.MediaRetentionStore;
 import com.ailearning.platform.community.application.port.out.PostFeatureStore;
 import com.ailearning.platform.community.application.port.out.SpaceChatStore;
@@ -19,9 +21,11 @@ import com.ailearning.platform.community.application.service.impl.CommunityServi
 import com.ailearning.platform.community.application.service.impl.DirectChatService;
 import com.ailearning.platform.community.application.service.impl.MediaRetentionService;
 import com.ailearning.platform.community.application.service.impl.PollService;
+import com.ailearning.platform.community.application.service.impl.SocialProfileService;
 import com.ailearning.platform.community.application.service.impl.SpaceChatService;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
 import com.ailearning.platform.identity.api.usecase.access.PublicProfileLookup;
+import com.ailearning.platform.identity.api.usecase.access.SocialProfileAccess;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +36,12 @@ import java.time.Clock;
 @Configuration
 @EnableScheduling
 public class CommunityConfig {
+    @Bean
+    SocialProfileUseCase socialProfileUseCase(
+            FriendshipStore store, SocialProfileAccess profiles, AccountAccess accounts) {
+        return new SocialProfileService(store, profiles, accounts);
+    }
+
     @Bean
     CommunityDiscoveryUseCase communityDiscoveryUseCase(
             CommunityStore store, PublicProfileLookup profiles, AccountAccess accounts) {

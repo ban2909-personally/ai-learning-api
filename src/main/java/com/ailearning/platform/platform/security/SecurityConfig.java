@@ -89,6 +89,7 @@ public class SecurityConfig {
                                                 "/api/v1/community/feed",
                                                 "/api/v1/community/search",
                                                 "/api/v1/community/people/*",
+                                                "/api/v1/community/people/*/profile",
                                                 "/api/v1/community/spaces",
                                                 "/api/v1/community/spaces/*",
                                                 "/api/v1/community/posts/*",

@@ -49,6 +49,14 @@ WHERE (c.user_left=? OR c.user_right=?)
     }
 
     @Override
+    public Optional<DirectConversationView> findWithPeer(UUID actor, UUID peer) {
+        var args = new ArrayList<Object>(Collections.nCopies(6, actor));
+        args.add(peer);
+        return jdbc.query(CONVERSATIONS + " AND peer.id=?", this::view, args.toArray()).stream()
+                .findFirst();
+    }
+
+    @Override
     public DirectInboxPage inbox(UUID actor, String filter, int page) {
         var args = new ArrayList<Object>(Collections.nCopies(6, actor));
         String query = CONVERSATIONS;

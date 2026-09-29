@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,6 +57,23 @@ public class DirectChatController {
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(defaultValue = "0") int page) {
         return chat.inbox(actor(jwt), filter, page);
+    }
+
+    @GetMapping("/peers/{peer}")
+    ResponseEntity<DirectConversationView> findWithPeer(
+            @AuthenticationPrincipal Jwt jwt, @PathVariable UUID peer) {
+        return chat.findWithPeer(actor(jwt), peer)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @PostMapping("/peers/{peer}")
+    @ResponseStatus(HttpStatus.CREATED)
+    DirectConversationView startWithPeer(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID peer,
+            @Valid @RequestBody MessageRequest body) {
+        return chat.startWithPeer(actor(jwt), peer, body.clientId(), body.body());
     }
 
     @PostMapping("/conversations")

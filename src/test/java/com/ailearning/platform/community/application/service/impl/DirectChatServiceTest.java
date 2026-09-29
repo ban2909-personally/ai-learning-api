@@ -47,6 +47,26 @@ class DirectChatServiceTest {
     }
 
     @Test
+    void idBasedChatKeepsActiveAccountAndClientIdChecksWithoutEmailLookup() {
+        UUID client = UUID.randomUUID();
+        when(store.start(actor, peer, client, "Hello")).thenReturn(conversation("REQUEST"));
+        assertEquals("REQUEST", service.startWithPeer(actor, peer, client, " Hello ").status());
+        verify(accounts).requireActive(peer);
+        verify(accounts, never()).findActiveByEmail(any());
+        when(store.findWithPeer(actor, peer)).thenReturn(Optional.of(conversation("ACTIVE")));
+        assertTrue(service.findWithPeer(actor, peer).isPresent());
+        assertThrows(
+                BusinessException.class,
+                () -> service.startWithPeer(actor, actor, client, "Hello"));
+        assertThrows(
+                BusinessException.class, () -> service.startWithPeer(actor, null, client, "Hello"));
+        assertThrows(BusinessException.class, () -> service.findWithPeer(actor, null));
+        assertThrows(
+                BusinessException.class, () -> service.startWithPeer(actor, peer, null, "Hello"));
+        assertThrows(BusinessException.class, () -> service.findWithPeer(null, peer));
+    }
+
+    @Test
     void participantAndActivePeerAreRequiredBeforeCallingSendPort() {
         when(store.conversation(actor, id)).thenReturn(Optional.of(conversation("REQUEST")));
         assertThrows(

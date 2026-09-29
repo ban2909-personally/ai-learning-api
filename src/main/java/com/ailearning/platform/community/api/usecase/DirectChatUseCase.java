@@ -5,9 +5,14 @@ import com.ailearning.platform.community.api.contract.DirectInboxPage;
 import com.ailearning.platform.community.api.contract.DirectMessagePage;
 import com.ailearning.platform.community.api.contract.DirectMessageView;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface DirectChatUseCase {
+    DirectConversationView startWithPeer(UUID actor, UUID peer, UUID clientId, String body);
+
+    Optional<DirectConversationView> findWithPeer(UUID actor, UUID peer);
+
     DirectConversationView start(UUID actor, String email, UUID clientId, String body);
 
     DirectInboxPage inbox(UUID actor, String filter, int page);

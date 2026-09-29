@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DirectChatStore {
+    Optional<DirectConversationView> findWithPeer(UUID actor, UUID peer);
+
     DirectConversationView start(UUID actor, UUID peer, UUID clientId, String body);
 
     Optional<DirectConversationView> conversation(UUID actor, UUID id);

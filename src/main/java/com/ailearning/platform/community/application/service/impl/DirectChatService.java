@@ -14,6 +14,7 @@ import com.ailearning.platform.sharedkernel.error.ErrorType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -60,6 +61,25 @@ public class DirectChatService implements DirectChatUseCase {
             throw new BusinessException(
                     "invalid_direct_inbox", ErrorType.BAD_REQUEST, "Bộ lọc chat không hợp lệ.");
         return store.inbox(actor, filter, page);
+    }
+
+    @Override
+    public DirectConversationView startWithPeer(UUID actor, UUID peer, UUID clientId, String body) {
+        actor(actor);
+        policy.requireDifferentUsers(actor, peer);
+        if (peer == null) throw missing();
+        accounts.requireActive(peer);
+        policy.requireClientId(clientId);
+        return store.start(actor, peer, clientId, policy.body(body));
+    }
+
+    @Override
+    public Optional<DirectConversationView> findWithPeer(UUID actor, UUID peer) {
+        actor(actor);
+        policy.requireDifferentUsers(actor, peer);
+        if (peer == null) throw missing();
+        accounts.requireActive(peer);
+        return store.findWithPeer(actor, peer);
     }
 
     @Override

@@ -111,17 +111,38 @@ LEFT JOIN community_post_features f ON f.post_id=p.id
     }
 
     @Override
-    public List<SpaceView> searchSpaces(String search, UUID viewer, int page) {
+    public List<SpaceView> searchSpaces(String search, UUID viewer, int page, int limit) {
+        String literal = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        String order =
+                search.isBlank()
+                        ? "s.created_at DESC,s.id DESC"
+                        : """
+CASE WHEN platform_search_key(s.name)=platform_search_key(?) THEN 0
+  WHEN platform_search_key(s.name) LIKE platform_search_key(?) THEN 1 ELSE 2 END,
+platform_search_key(s.name),s.id
+""";
         return jdbc.query(
-                SPACE_SELECT
-                        + """
-                           WHERE lower(s.name) LIKE ?
-                           ORDER BY s.created_at DESC,s.id DESC LIMIT 20 OFFSET ?
-                          """,
-                this::spaceView,
-                viewer,
-                "%" + search.toLowerCase(java.util.Locale.ROOT) + "%",
-                (long) page * 20);
+                connection -> {
+                    var statement =
+                            connection.prepareStatement(
+                                    SPACE_SELECT
+                                            + " WHERE platform_search_key(s.name) LIKE"
+                                            + " platform_search_key(?) ORDER BY "
+                                            + order
+                                            + " LIMIT ? OFFSET ?");
+                    statement.setQueryTimeout(2);
+                    statement.setObject(1, viewer);
+                    statement.setString(2, "%" + literal + "%");
+                    int index = 3;
+                    if (!search.isBlank()) {
+                        statement.setString(index++, search);
+                        statement.setString(index++, literal + "%");
+                    }
+                    statement.setInt(index++, limit);
+                    statement.setLong(index, (long) page * 20);
+                    return statement;
+                },
+                this::spaceView);
     }
 
     @Override
@@ -276,7 +297,7 @@ ON CONFLICT(space_id,user_id) DO NOTHING
 
     @Override
     public List<PostView> feed(
-            UUID viewer, UUID spaceId, Instant before, UUID beforeId, int limit) {
+            UUID viewer, UUID spaceId, UUID authorId, Instant before, UUID beforeId, int limit) {
         StringBuilder query =
                 new StringBuilder(POST_SELECT)
                         .append(
@@ -294,6 +315,12 @@ WHERE p.status='ACTIVE'
         parameters.add(viewer);
         parameters.add(spaceId);
         parameters.add(spaceId);
+        if (authorId != null) {
+            // A public profile must not surface private-space posts, even for an approved viewer.
+            query.append(
+                    " AND p.author_id=? AND (p.space_id IS NULL OR space.visibility='PUBLIC')");
+            parameters.add(authorId);
+        }
         if (before != null) {
             query.append(" AND (p.created_at,p.id) < (?,?::uuid)");
             parameters.add(Timestamp.from(before));

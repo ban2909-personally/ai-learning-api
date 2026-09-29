@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CommunityUseCase {
-    FeedPage feed(UUID viewer, UUID spaceId, String cursor, int size);
+    FeedPage feed(UUID viewer, UUID spaceId, UUID authorId, String cursor, int size);
 
     List<SpaceView> spaces(UUID viewer, String search, int page);
 

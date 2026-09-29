@@ -63,6 +63,102 @@ class CommunityApiIntegrationTest {
     private final UUID student = UUID.fromString("31000000-0000-0000-0000-000000000002");
     private final UUID lecturer = UUID.fromString("31000000-0000-0000-0000-000000000003");
 
+    @Test
+    void discoveryMatchesOneCharacterAccentsAndRanksPrefixWithoutExposingIdentitySecrets()
+            throws Exception {
+        jdbc.update("UPDATE users SET display_name='Hà Anh' WHERE id=?", guest);
+        jdbc.update("UPDATE users SET display_name='Minh Hà' WHERE id=?", student);
+        jdbc.update(
+                "UPDATE users SET display_name='Hà Disabled',status='DISABLED' WHERE id=?",
+                lecturer);
+        String group = createSpace(guest, "GUEST", "GROUP", "PRIVATE");
+        String page = createSpace(guest, "GUEST", "PAGE", "PUBLIC");
+        jdbc.update(
+                "UPDATE community_spaces SET name='Hội trí tuệ nhân tạo' WHERE id=?::uuid", group);
+        jdbc.update("UPDATE community_spaces SET name='English Hub' WHERE id=?::uuid", page);
+        mvc.perform(get("/api/v1/community/search").param("q", "h"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spaces.length()").value(2))
+                .andExpect(jsonPath("$.people.length()").value(2));
+        mvc.perform(get("/api/v1/community/search").param("q", "HA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.people[0].displayName").value("Hà Anh"))
+                .andExpect(jsonPath("$.people[0].email").doesNotExist())
+                .andExpect(jsonPath("$.people[0].roles").doesNotExist());
+        mvc.perform(get("/api/v1/community/search").param("q", "tri tue"))
+                .andExpect(jsonPath("$.spaces.length()").value(1))
+                .andExpect(jsonPath("$.spaces[0].visibility").value("PRIVATE"));
+        mvc.perform(get("/api/v1/community/people/" + lecturer)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/community/people/" + guest))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.displayName").value("Hà Anh"))
+                .andExpect(jsonPath("$.email").doesNotExist());
+    }
+
+    @Test
+    void directoryTreatsWildcardCharactersLiterallyAndBoundsPagination() throws Exception {
+        jdbc.update("UPDATE users SET display_name=? WHERE id=?", "100%_\\English", guest);
+        String group = createSpace(guest, "GUEST", "GROUP", "PUBLIC");
+        jdbc.update("UPDATE community_spaces SET name=? WHERE id=?::uuid", "100%_\\English", group);
+        for (String query : java.util.List.of("%", "_", "\\", "100%_\\")) {
+            mvc.perform(get("/api/v1/community/search").param("q", query))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.people.length()").value(1))
+                    .andExpect(jsonPath("$.spaces.length()").value(1));
+        }
+        mvc.perform(get("/api/v1/community/search").param("q", "' OR true --"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.people").isEmpty());
+        mvc.perform(get("/api/v1/community/search")).andExpect(jsonPath("$.people").isEmpty());
+        mvc.perform(get("/api/v1/community/search").param("q", "h".repeat(121)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/community/search").param("q", "h").param("page", "-1"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/community/search").param("q", "h").param("page", "101"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/community/people/not-a-uuid")).andExpect(status().isBadRequest());
+        for (int index = 0; index < 21; index++) {
+            addUser(UUID.randomUUID(), "STUDENT", "directory" + index + "@example.test");
+        }
+        mvc.perform(get("/api/v1/community/search").param("q", "Member"))
+                .andExpect(jsonPath("$.people.length()").value(20))
+                .andExpect(jsonPath("$.peopleHasMore").value(true));
+        mvc.perform(get("/api/v1/community/search").param("q", "Member").param("page", "1"))
+                .andExpect(jsonPath("$.people.length()").value(3))
+                .andExpect(jsonPath("$.peopleHasMore").value(false));
+    }
+
+    @Test
+    void publicProfileFeedCannotExposePrivatePostsEvenForOwnerAndKeepsAuthorFilterAcrossPages()
+            throws Exception {
+        String privateGroup = createSpace(guest, "GUEST", "GROUP", "PRIVATE");
+        createPost(guest, "GUEST", "Private secret", privateGroup);
+        createPost(guest, "GUEST", "Public first", null);
+        createPost(guest, "GUEST", "Public second", null);
+        createPost(student, "STUDENT", "Other author", null);
+        String first =
+                mvc.perform(
+                                get("/api/v1/community/feed")
+                                        .param("authorId", guest.toString())
+                                        .param("size", "1")
+                                        .with(as(guest, "GUEST")))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.posts.length()").value(1))
+                        .andExpect(jsonPath("$.posts[0].body").value("Public second"))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        String cursor = JsonPath.read(first, "$.nextCursor");
+        mvc.perform(
+                        get("/api/v1/community/feed")
+                                .param("authorId", guest.toString())
+                                .param("cursor", cursor))
+                .andExpect(jsonPath("$.posts.length()").value(1))
+                .andExpect(jsonPath("$.posts[0].body").value("Public first"));
+        mvc.perform(get("/api/v1/community/feed").param("authorId", UUID.randomUUID().toString()))
+                .andExpect(status().isNotFound());
+    }
+
     @BeforeEach
     void seed() {
         jdbc.execute("TRUNCATE users CASCADE");

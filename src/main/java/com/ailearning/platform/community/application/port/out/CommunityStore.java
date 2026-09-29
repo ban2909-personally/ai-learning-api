@@ -26,7 +26,7 @@ public interface CommunityStore {
 
     Optional<SpaceView> spaceView(UUID id, UUID viewer);
 
-    List<SpaceView> searchSpaces(String search, UUID viewer, int page);
+    List<SpaceView> searchSpaces(String search, UUID viewer, int page, int limit);
 
     void createSpace(Space space);
 
@@ -46,7 +46,8 @@ public interface CommunityStore {
 
     Optional<PostView> postView(UUID id, UUID viewer);
 
-    List<PostView> feed(UUID viewer, UUID spaceId, Instant before, UUID beforeId, int limit);
+    List<PostView> feed(
+            UUID viewer, UUID spaceId, UUID authorId, Instant before, UUID beforeId, int limit);
 
     boolean createPost(Post post, MediaAsset media, PostFeatures features);
 

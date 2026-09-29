@@ -87,6 +87,8 @@ public class SecurityConfig {
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/api/v1/community/feed",
+                                                "/api/v1/community/search",
+                                                "/api/v1/community/people/*",
                                                 "/api/v1/community/spaces",
                                                 "/api/v1/community/spaces/*",
                                                 "/api/v1/community/posts/*",
@@ -94,9 +96,11 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/v1/community/**")
                                         .authenticated()
-                                        .requestMatchers(HttpMethod.GET, "/api/v1/media/community/posts/*")
+                                        .requestMatchers(
+                                                HttpMethod.GET, "/api/v1/media/community/posts/*")
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.HEAD, "/api/v1/media/community/posts/*")
+                                        .requestMatchers(
+                                                HttpMethod.HEAD, "/api/v1/media/community/posts/*")
                                         .permitAll()
                                         .requestMatchers(
                                                 "/api/v1/practice/authoring/**",

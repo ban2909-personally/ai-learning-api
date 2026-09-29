@@ -21,6 +21,7 @@ import com.ailearning.platform.community.domain.model.SpaceVisibility;
 import com.ailearning.platform.community.domain.policy.CommunityPolicy;
 import com.ailearning.platform.community.domain.policy.PostFeaturesPolicy;
 import com.ailearning.platform.identity.api.usecase.access.AccountAccess;
+import com.ailearning.platform.identity.api.usecase.access.PublicProfileLookup;
 import com.ailearning.platform.sharedkernel.error.BusinessException;
 import com.ailearning.platform.sharedkernel.error.ErrorType;
 
@@ -35,12 +36,18 @@ import java.util.UUID;
 public class CommunityService implements CommunityUseCase {
     private final CommunityStore store;
     private final AccountAccess accounts;
+    private final PublicProfileLookup profiles;
     private final Clock clock;
     private final CommunityPolicy policy = new CommunityPolicy();
 
-    public CommunityService(CommunityStore store, AccountAccess accounts, Clock clock) {
+    public CommunityService(
+            CommunityStore store,
+            AccountAccess accounts,
+            PublicProfileLookup profiles,
+            Clock clock) {
         this.store = store;
         this.accounts = accounts;
+        this.profiles = profiles;
         this.clock = clock;
     }
 
@@ -80,8 +87,9 @@ public class CommunityService implements CommunityUseCase {
     }
 
     @Override
-    public FeedPage feed(UUID viewer, UUID spaceId, String cursor, int size) {
+    public FeedPage feed(UUID viewer, UUID spaceId, UUID authorId, String cursor, int size) {
         activeViewer(viewer);
+        if (authorId != null) profiles.profile(authorId);
         if (spaceId != null) {
             Space space = spaceRequired(spaceId);
             policy.requireVisible(space, member(spaceId, viewer));
@@ -105,7 +113,7 @@ public class CommunityService implements CommunityUseCase {
                         "Trang bài viết không hợp lệ.");
             }
         }
-        List<PostView> rows = store.feed(viewer, spaceId, before, beforeId, limit + 1);
+        List<PostView> rows = store.feed(viewer, spaceId, authorId, before, beforeId, limit + 1);
         boolean hasMore = rows.size() > limit;
         List<PostView> posts = hasMore ? new ArrayList<>(rows.subList(0, limit)) : rows;
         String next = null;
@@ -129,7 +137,7 @@ public class CommunityService implements CommunityUseCase {
             throw new BusinessException(
                     "invalid_space_search", ErrorType.BAD_REQUEST, "Từ khóa tìm kiếm quá dài.");
         }
-        return store.searchSpaces(term, viewer, Math.max(0, page));
+        return store.searchSpaces(term, viewer, Math.max(0, Math.min(page, 100)), 20);
     }
 
     @Override

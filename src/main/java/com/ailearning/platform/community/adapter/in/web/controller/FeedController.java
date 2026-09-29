@@ -41,9 +41,10 @@ public class FeedController {
     FeedPage feed(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) UUID spaceId,
+            @RequestParam(required = false) UUID authorId,
             @RequestParam(defaultValue = "") String cursor,
             @RequestParam(defaultValue = "12") int size) {
-        return community.feed(actor(jwt), spaceId, cursor, size);
+        return community.feed(actor(jwt), spaceId, authorId, cursor, size);
     }
 
     @GetMapping("/posts/{id}")

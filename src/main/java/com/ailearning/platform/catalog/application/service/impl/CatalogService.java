@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class CatalogService implements
-        CatalogUseCase,
-        PublishedCourseLookup,
-        PublishedCurriculumLookup,
-        CourseLearningContentLookup {
+public class CatalogService
+        implements CatalogUseCase,
+                PublishedCourseLookup,
+                PublishedCurriculumLookup,
+                CourseLearningContentLookup {
     private final CatalogStore store;
     private final CurriculumStore curricula;
     private final LessonContentStore lessons;
@@ -38,8 +38,7 @@ public class CatalogService implements
             CatalogStore store,
             CurriculumStore curricula,
             LessonContentStore lessons,
-            PopularCatalogCache popularCache
-    ) {
+            PopularCatalogCache popularCache) {
         this.store = store;
         this.curricula = curricula;
         this.lessons = lessons;
@@ -65,16 +64,23 @@ public class CatalogService implements
 
     @Override
     public Course findPublishedCourse(String slug) {
-        return store.findPublishedBySlug(slug).orElseThrow(() -> new BusinessException(
-                "course_not_found",
-                ErrorType.NOT_FOUND,
-                "Không tìm thấy khóa học đã xuất bản."
-        ));
+        return store.findPublishedBySlug(slug)
+                .orElseThrow(
+                        () ->
+                                new BusinessException(
+                                        "course_not_found",
+                                        ErrorType.NOT_FOUND,
+                                        "Không tìm thấy khóa học đã xuất bản."));
     }
 
     @Override
     public List<Category> findCategories() {
         return store.findCategories();
+    }
+
+    @Override
+    public List<Category> findPublishedCategories() {
+        return store.findPublishedCategories();
     }
 
     @Override
@@ -89,11 +95,14 @@ public class CatalogService implements
 
     @Override
     public CourseCurriculumView findPublishedCurriculum(String courseSlug) {
-        return curricula.findPublishedByCourseSlug(courseSlug).orElseThrow(() -> new BusinessException(
-                "course_curriculum_not_found",
-                ErrorType.NOT_FOUND,
-                "Không tìm thấy nội dung khóa học."
-        ));
+        return curricula
+                .findPublishedByCourseSlug(courseSlug)
+                .orElseThrow(
+                        () ->
+                                new BusinessException(
+                                        "course_curriculum_not_found",
+                                        ErrorType.NOT_FOUND,
+                                        "Không tìm thấy nội dung khóa học."));
     }
 
     @Override
@@ -145,9 +154,7 @@ public class CatalogService implements
                         course.category().id(),
                         course.category().slug(),
                         course.category().name(),
-                        course.category().description()
-                ),
-                course.instructorName()
-        );
+                        course.category().description()),
+                course.instructorName());
     }
 }

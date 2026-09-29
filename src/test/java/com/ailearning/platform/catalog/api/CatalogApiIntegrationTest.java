@@ -1,5 +1,9 @@
 package com.ailearning.platform.catalog.api;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,10 +16,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
@@ -24,10 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CatalogApiIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("ai_learning_catalog_test")
-            .withUsername("test")
-            .withPassword("test");
+    static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>("postgres:17-alpine")
+                    .withDatabaseName("ai_learning_catalog_test")
+                    .withUsername("test")
+                    .withPassword("test");
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
@@ -40,15 +41,15 @@ class CatalogApiIntegrationTest {
         registry.add("spring.data.redis.timeout", () -> "100ms");
     }
 
-    @Autowired
-    MockMvc mockMvc;
+    @Autowired MockMvc mockMvc;
 
     @Test
     void listsOnlyPublishedCoursesAndSupportsFiltering() throws Exception {
-        mockMvc.perform(get("/api/v1/courses")
-                        .queryParam("search", "Spring")
-                        .queryParam("category", "backend")
-                        .queryParam("level", "INTERMEDIATE"))
+        mockMvc.perform(
+                        get("/api/v1/courses")
+                                .queryParam("search", "Spring")
+                                .queryParam("category", "backend")
+                                .queryParam("level", "INTERMEDIATE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].slug").value("spring-boot-api-thuc-chien"))
@@ -72,6 +73,18 @@ class CatalogApiIntegrationTest {
     }
 
     @Test
+    void categoryFilterExcludesEmptyAndDraftOnlyCategoriesWithoutChangingAuthoringList()
+            throws Exception {
+        mockMvc.perform(get("/api/v1/categories").param("publishedOnly", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].slug").value("backend"));
+        mockMvc.perform(get("/api/v1/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(4));
+    }
+
+    @Test
     void doesNotExposeDraftCourse() throws Exception {
         mockMvc.perform(get("/api/v1/courses/react-ban-nhap"))
                 .andExpect(status().isNotFound())
@@ -80,9 +93,10 @@ class CatalogApiIntegrationTest {
 
     @Test
     void rejectsInvalidPriceRange() throws Exception {
-        mockMvc.perform(get("/api/v1/courses")
-                        .queryParam("minPrice", "500000")
-                        .queryParam("maxPrice", "100000"))
+        mockMvc.perform(
+                        get("/api/v1/courses")
+                                .queryParam("minPrice", "500000")
+                                .queryParam("maxPrice", "100000"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("invalid_catalog_query"));
     }

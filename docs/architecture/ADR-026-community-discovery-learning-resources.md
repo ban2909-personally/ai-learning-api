@@ -22,10 +22,14 @@ Status: Accepted for incremental implementation, 2026-09-29.
 
 ## Acceptance checklist
 
-- [ ] One-character substring, progressively narrowing results, case/accent folding, exact/prefix priority, stable pagination.
-- [ ] Literal `%`, `_`, backslash; bounded query/page; blank input; invalid UUID; no email/role/status leaks.
-- [ ] Inactive users excluded; private-group content and pending/expired posts absent on public profiles.
-- [ ] Debounce/cancellation, keyboard/touch links, empty/error/retry states; 320/768/1440 px without overflow.
-- [ ] Free English sources/filter/search with origin links and explicit paid/registration caveats.
-- [ ] Local regression gates, architecture/Modulith, Flyway and actual localhost checks pass.
+- [x] One-character substring, progressively narrowing results, case/accent folding, exact/prefix priority, stable pagination.
+- [x] Literal `%`, `_`, backslash; bounded query/page; blank input; invalid UUID; no email/role/status leaks.
+- [x] Inactive users excluded; private-group content excluded even for owner. Existing pending/expiry predicates retained; existing regression gates pass.
+- [x] Debounce/cancellation, keyboard/touch links, empty/error/retry states; 320/768/1440 px without overflow and visually inspected screenshots.
+- [x] Free English sources/filter/search with origin links and explicit paid/registration caveats.
+- [x] Local regression gates, architecture/Modulith, Flyway and actual localhost checks pass.
 - [ ] Report changes, commit SHAs and CI evidence; preserve user's uncommitted file and main refs.
+
+Remote CI is pending at document creation. Final delivery evidence is recorded separately in the local receipt to avoid changing the verified commit SHA just to update CI status.
+
+Technical references: [PostgreSQL unaccent](https://www.postgresql.org/docs/current/unaccent.html), [PostgreSQL pg_trgm](https://www.postgresql.org/docs/current/pgtrgm.html). Short patterns without extractable trigrams do not benefit from the index; query timeout is 2 seconds per directory query. Rate limiting and representative production load testing remain deployment work, not a claimed result of local smoke tests. Expression indexes in V26 are transactional, not concurrent; plan index-build locking for large production tables.
